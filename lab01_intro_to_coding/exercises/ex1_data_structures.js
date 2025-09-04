@@ -45,8 +45,9 @@ var newURL = "icp.org"
 var newYear = 1974
 
 names.push(newName);
-URLs[6] = newURL;
-years = years.concat(newYear);
+URLs[URLs.length] = newURL;
+// concat will cast so brackets maybe not required but best practice
+years = years.concat([newYear]);
 
 // Task 3
 // construct an Object out of our three Arrays
