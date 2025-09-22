@@ -120,7 +120,6 @@ const getAndParseAllData = () => {
 
 const sortByDecade = (data) => {
   data.sort((a, b) => a.decade - b.decade);
-  console.log(data.pop())
 }
 
 const displayData = (data) => {
@@ -140,14 +139,7 @@ const displayData = (data) => {
       img.className = "stamp-thumbnail";
       img.alt = stamp.title;
 
-      // add a link to the record page
-      const link = document.createElement("a");
-      link.href = stamp.link;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.appendChild(img);
-
-      container.appendChild(link);
+      container.appendChild(img);
       imagesContainer.appendChild(container);
     } 
   })
