@@ -7,7 +7,7 @@ const constructAndFetchQueries = (searchTerm) => {
     const searchBaseURL = "https://api.si.edu/openaccess/api/v1.0/search"; 
 
     // API key
-    const apiKey = "";  
+    const apiKey = process.env.SI_API_KEY;  
 
     let url = searchBaseURL + "?api_key=" + apiKey + "&q=" + searchTerm;
 
