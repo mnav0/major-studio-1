@@ -1,3 +1,35 @@
+:root {
+  --color-middle: #cbb28e;
+  --color-primary-dark: #6b5347;
+  --color-primary-light: #f2e5d1;
+}
+
+body {
+  font-family: "Overpass Mono", monospace;
+  margin: 20px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+h1 {
+  font-family: "Fraunces", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 6em;
+}
+
+h2 {
+  font-family: "Fraunces", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 3em;
+}
+
+.subheading {
+  font-size: 1.5em;
+  line-height: 1.25;
+}
+
 .stamp-image-container {
   display: inline-block;
   text-align: center;
