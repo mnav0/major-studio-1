@@ -117,7 +117,7 @@ const getAndParseAllData = () => {
   Promise.all(searchPromises).then((result) => {
     sortByDecade(stampData);
 
-    displayData(stampData);
+    setupEntryButton();
   })
 }
 
@@ -125,27 +125,22 @@ const sortByDecade = (data) => {
   data.sort((a, b) => a.decade - b.decade);
 }
 
-const displayData = (data) => {
-  const imagesContainer = document.querySelector("#stamp-images");
+const setupEntryButton = () => {
+  const entryButton = document.querySelector("#entry-button");
 
-  data.forEach((stamp) => {
-    // skip stamps without images
-    if (stamp.media) {
-      const container = document.createElement("div");
-      container.className = "stamp-image-container";
-
-      const thumbnailImg = stamp.media[0].thumbnail;
-
-      // create image element
-      const img = document.createElement("img");
-      img.src = thumbnailImg;
-      img.className = "stamp-thumbnail";
-      img.alt = stamp.title;
-
-      container.appendChild(img);
-      imagesContainer.appendChild(container);
-    } 
+  entryButton.addEventListener("click", (e) => {
+    hideIntroSection();
+    displayData();
   })
+}
+
+const hideIntroSection = () => {
+  const introSection = document.querySelector("#intro-section");
+  introSection.style.display = "none";
+}
+
+const displayData = () => {
+  console.log(stampData)
 }
 
 getAndParseAllData();

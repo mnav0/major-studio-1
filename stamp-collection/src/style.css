@@ -15,7 +15,7 @@ h1 {
   font-family: "Fraunces", serif;
   font-weight: 400;
   font-style: italic;
-  font-size: 6em;
+  font-size: 4em;
 }
 
 h2 {
@@ -25,21 +25,73 @@ h2 {
   font-size: 3em;
 }
 
-.subheading {
-  font-size: 1.5em;
-  line-height: 1.25;
+p {
+  line-height: 1.3;
+  margin-bottom: 0.25em;
 }
 
-.stamp-image-container {
-  display: inline-block;
-  text-align: center;
-  vertical-align: middle;
-  height: 108px;
-  width: 69px;
+p a {
+  color: var(--color-primary-dark);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-primary-dark);
+}
+
+p a:hover {
+  color: var(--color-middle);
+}
+
+#entry-button {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  border: 1.5px solid var(--color-primary-dark);
+  padding: 0.5em 3em;
+  cursor: pointer;
+  margin-top: 1em;
+}
+
+.intro-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.align-left {
+  text-align: left;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.stamp-example-container {
+  display: flex;
+  align-items: flex-end;
+}
+
+.intro-text {
+  position: relative;
+  top: 10em;
+}
+
+.historical-context {
+  max-width: 28em;
+  padding-right: 1em;
+}
+
+#data {
+  display: none;
+}
+
+.first-stamp-image-container {
+  height: 10em;
+  width: 8em;
   overflow: hidden;
 }
 
-.stamp-thumbnail {
-  height: 118px;
-  width: auto;
+.first-stamp-thumbnail {
+  height: auto;
+  width: 17.5em;
+  position: relative;
+  top: -4.7em;
+  left: -0.7em;
 }
