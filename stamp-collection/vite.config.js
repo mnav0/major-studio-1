@@ -6,8 +6,5 @@ export default defineConfig({
   build: {
     outDir: 'dist',   // where to output the built files
     emptyOutDir: true // clean outDir before building
-  },
-  server: {
-    open: true // auto open browser on dev
   }
 })

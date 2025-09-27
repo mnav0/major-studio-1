@@ -11,6 +11,12 @@ body {
   color: var(--color-primary-dark);
 }
 
+text {
+  font-family: "Overpass Mono", monospace;
+  fill: var(--color-primary-dark);
+  text-transform: capitalize;
+}
+
 h1 {
   font-family: "Fraunces", serif;
   font-weight: 400;
@@ -76,11 +82,12 @@ p a:hover {
 .historical-context {
   max-width: 28em;
   padding-right: 1em;
+  flex: 1;
 }
 
-#data {
+/* #data {
   display: none;
-}
+} */
 
 .first-stamp-image-container {
   height: 10em;
