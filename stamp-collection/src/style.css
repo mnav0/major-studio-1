@@ -85,14 +85,27 @@ p a:hover {
   flex: 1;
 }
 
-/* #data {
+#data {
   display: none;
-} */
+}
 
-.first-stamp-image-container {
+#slider-container {
+  position: -webkit-sticky; /* Safari */
+  position: sticky;
+  top: 0;
+  background-color: var(--color-primary-light);
+  padding-top: 1em;
+  padding-bottom: 1em;
+  z-index: 1;
+}
+
+.stamp-image-container {
   height: 10em;
   width: 8em;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .first-stamp-thumbnail {
@@ -101,4 +114,13 @@ p a:hover {
   position: relative;
   top: -4.7em;
   left: -0.7em;
+}
+
+.stamp-thumbnail {
+  height: 10em;
+  width: auto;
+}
+
+.postmark-image-container {
+  justify-content: flex-start;
 }

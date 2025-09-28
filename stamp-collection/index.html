@@ -15,7 +15,7 @@
   </head>
   <body>
     <div id="app" class="container">
-      <!-- <div class="row">
+      <div class="row">
         <div id="intro-section" class="col-12 text-center mt-4">
           <div class="intro-heading">
             <div class="align-left">
@@ -24,7 +24,7 @@
             </div>
             <div class="align-right stamp-example-container">
               <p class="historical-context">The first stamp proof, created by the British Board of Stamps to be used by American colonies after November 1, 1765</p>
-              <div class="first-stamp-image-container">
+              <div class="stamp-image-container">
                 <img 
                   src="https://ids.si.edu/ids/deliveryService?id=NPM-0_022044_1c"
                   alt="First stamp proof from the Stamp Act of 1765" 
@@ -38,17 +38,22 @@
             <button id="entry-button">Explore</button>
           </div>
         </div>
-      </div> -->
+      </div>
 
       <div id="data">
-        <div class="col-12 chart-heading">
+        <div class="col-12 intro-heading">
           <div class="align-left">
-            <p class="chart-dates-results">themes sample</p>
-            <h2 id="chart-main-themes">text</h2>
+            <p class="chart-dates-results"></p>
+            <h2 id="chart-main-themes"></h2>
           </div>
-          <div class="align-right"> 
-            <p class="historical-context"></p>
-            <div class="stamp-image-container"></div>
+          <div class="align-right stamp-example-container"> 
+            <p class="historical-context" id="historical-context"></p>
+            <div id="stamp-highlight" class="stamp-image-container">
+               <img 
+                  src=""
+                  class="stamp-thumbnail"
+                  id="stamp-highlight-image" />
+            </div>
           </div>
         </div>
 

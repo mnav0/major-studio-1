@@ -6,7 +6,7 @@ const colors = {
   dark: '#6b5347'
 };
 
-let selectedDecade = 1850;
+let selectedDecade = 1760;
 
 // array of stamp data based on Smithsonian API
 let stampData = [];
@@ -14,7 +14,25 @@ let stampData = [];
 let groupedData = [];
 
 // load or write with JSON and fetch historical context for themes here
-const themeContext = {
+const historicalContext = {
+  1760: "The Stamp Act of 1765 imposed a direct tax on the colonies by the British government, requiring many printed materials in the colonies to be produced on stamped paper produced in London, carrying an embossed revenue stamp.",
+  1780: "During the American Revolutionary War, the Continental Congress established a postal system to facilitate communication among the colonies and with foreign allies. The first official postmark was introduced in 1787.",
+  1790: "The first U.S. postage stamps were issued in 1847, featuring Benjamin Franklin and George Washington. Before that, letters were often marked with hand-stamped postmarks indicating payment or due postage.",
+  1800: "Embossed postmarks were used on letters to indicate that postage had been paid. These early postmarks were often simple designs embossed directly onto the paper.",
+  1810: "The U.S. Postal Service continued to expand, and postmarks became more standardized. The use of hand-stamped postmarks was common for indicating the date and location of mailing.",
+  1820: "Postmarks evolved to include more detailed information, such as the specific post office location and date of mailing. This helped improve mail sorting and delivery.",
+  1830: "The introduction of the first adhesive postage stamp in the U.S. in 1847 marked a significant advancement in postal services. Postmarks were used to cancel stamps and prevent reuse.",
+  1840: "The U.S. Postal Service introduced the first adhesive postage stamps, featuring Benjamin Franklin and George Washington. Postmarks were used to cancel these stamps.",
+  1850: "Postmarks became more intricate, often including decorative elements. The use of different colors of ink for postmarks also became more common during this period.",
+  1860: "During the Civil War, both the Union and Confederate states issued their own postage stamps. Postmarks from this era often reflect the tumultuous times and the division between North and South.",
+  1870: "The U.S. Postal Service introduced new stamp designs and denominations. Postmarks continued to evolve, with some featuring unique designs to commemorate special events or anniversaries.",
+  1880: "The late 19th century saw the introduction of more elaborate postmarks, including pictorial designs. The use of machine cancellations also began to emerge during this period.",
+  1890: "Postmarks became more standardized across the country, with the U.S. Postal Service implementing uniform designs and formats. This helped improve mail processing efficiency.",
+  1900: "The early 20th century saw the introduction of commemorative stamps and special postmarks for events such as expositions and anniversaries. The use of machine cancellations became more widespread.",
+  1910: "During this decade, the U.S. Postal Service continued to innovate with new stamp designs and postmark styles. Special postmarks were often created for significant events, such as the Panama-Pacific International Exposition in 1915.",
+  1920: "The 1920s saw a boom in stamp collecting, leading to the issuance of numerous commemorative stamps. Postmarks from this era often reflect the cultural and social changes of the time.",
+  1930: "The Great Depression influenced stamp designs and themes, with many stamps commemorating historical events and figures. Postmarks continued to be an essential part of mail processing.",
+  1940: "During World War II, stamps often featured patriotic themes, and postmarks were used to commemorate war-related events. The U.S. Postal Service also introduced new technologies for mail sorting and delivery.",
 }
 
 const themeNormalization = {
@@ -65,7 +83,6 @@ const themeBuckets = {
   ]
 };
 
-
 const themesRegex = new RegExp(
   "\\b(" +
     [
@@ -112,39 +129,13 @@ function extractThemesWithContext(text) {
       }
       return [{
         keyword: theme,
-        bucket,
-        context: themeContext[theme.toLowerCase()] || "No context available"
+        bucket
       }];
     }
   }
 
   return [];
 }
-
-// function extractThemesWithContext(text) {
-//   if (!text) return [];
-//   const matches = text.match(themesRegex);
-//   if (!matches) return [];
-
-//   return matches.map(m => {
-//     const rawKey = m.toLowerCase();
-//     const normKey = themeNormalization[rawKey] || m; // use normalized version if available
-
-//     let bucket = "Other";
-//     for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
-//       if (keywords.map(k => k.toLowerCase()).includes(normKey.toLowerCase())) {
-//         bucket = bucketName;
-//         break;
-//       }
-//     }
-
-//     return {
-//       keyword: normKey,
-//       bucket,
-//       context: themeContext[normKey.toLowerCase()] || "No context available"
-//     };
-//   });
-// }
 
 // search: fetches an array of terms based on term category
 const constructAndFetchQueries = (searchTerm) => {
@@ -325,10 +316,11 @@ const getAndParseAllData = () => {
     console.log("Flat Data:", groupedData);
     drawTimeSlider(groupedData);
 
-    // setupEntryButton(flatData);
-    // temp to remove after set up entry button
-    const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-    displayData(dataToDisplay);
+    setupEntryButton(flatData);
+
+    // for dev:
+    // const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
+    // displayData(dataToDisplay);
   })
 }
 
@@ -356,8 +348,9 @@ const drawTimeSlider = (data) => {
   // and reassigns selectedDecade on change
   const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
 
+  const minSliderWidth = 1000;
   const margin = { top: 20, right: 30, bottom: 40, left: 150 },
-      sliderWidth = window.innerWidth - margin.left - margin.right - 200,
+      sliderWidth = Math.max(minSliderWidth, window.innerWidth - margin.left - margin.right - 100),
       sliderHeight = 100;
 
   const svg = d3.select("#slider-container")
@@ -396,6 +389,7 @@ const drawTimeSlider = (data) => {
         const decade = Math.round(x.invert(xPos) / 10) * 10;
 
         if (decades.includes(decade)) {
+          if (decade === selectedDecade) return; // no change
           selectedDecade = decade;
           handle.attr("cx", x(selectedDecade));
 
@@ -414,15 +408,22 @@ const drawTimeSlider = (data) => {
       .attr("y", 30)
       .attr("text-anchor", "middle")
       .text(d => d);
+
+  // add ticks to slider
+  slider.selectAll("line.tick")
+    .data(decades)
+    .enter()
+    .append("line")
+      .attr("class", "tick")
+      .attr("x1", d => x(d))
+      .attr("x2", d => x(d))
+      .attr("y1", -10)
+      .attr("y2", 10)
+      .attr("stroke", colors.middle)
+      .attr("stroke-width", 1);
 }
 
-const displayData = (data) => {
-  const dataSection = document.querySelector("#data");
-  dataSection.style.display = "block";
-
-  const barsContainer = document.querySelector("#bars-container");
-  barsContainer.innerHTML = "";
-  
+const drawBars = (data) => {
   // build a d3 bar chart based off of data grouping by decade and theme
   // one bar for each decade - theme pairing
   // height of bar is number of stamps in that decade with that theme
@@ -504,7 +505,71 @@ const displayData = (data) => {
       .attr("y", d => y(d.theme) + y.bandwidth() / 2)
       .attr("alignment-baseline", "middle")
       .text(d => d.count);
+}
 
+// when passed to here the data is already sorted by count descending and filtered by decade
+const updateHeading = (data) => {
+  // calculate total number of stamps in this decade
+  let stampsCount = 0;
+  data.forEach((d) => {
+    stampsCount += d.count;
+  })
+
+  // update the subheading with the selected decade and number of stamps
+  const heading = document.querySelector(".chart-dates-results");
+  heading.innerHTML = `Themes of U.S. Stamps from the ${selectedDecade}s <strong>(${stampsCount} stamps)</strong>`;
+
+  const mainThemes = document.querySelector("#chart-main-themes");
+  const theme1 = data[0] ? data[0].theme : "";
+  const theme2 = data[1] ? data[1].theme : "";
+
+  mainThemes.innerHTML = `${theme1}${theme2 ? ", " + theme2 : ""}`;
+
+  // update the historical context paragraph
+  const histContext = document.querySelector("#historical-context");
+  histContext.innerHTML = historicalContext[selectedDecade];
+
+  // update the stamp highlight image to a random stamp from the top theme
+  const isEntryPoint = selectedDecade == 1760; 
+  const imgContainer = document.querySelector("#stamp-highlight");
+  const img = document.querySelector("#stamp-highlight-image");
+  img.src = "";
+  img.alt = "";
+  imgContainer.classList.remove("postmark-image-container");
+
+  let stampToDisplay;
+
+  if (isEntryPoint) {
+    stampToDisplay = data[0].stamps.find(s => s.id == "ld1-1643399842277-1643399842286-1");
+  } else {
+    // update the stamp highlight with a randomly selected stamp from the top theme
+    const topThemeStampsWithImages = data[0].stamps.filter(s => s.media && s.media.length > 0);
+    stampToDisplay = topThemeStampsWithImages[Math.floor(Math.random() * topThemeStampsWithImages.length)];
+  }
+
+  if (stampToDisplay) {
+    const imageUrl = stampToDisplay.media[0].thumbnail;
+    img.src = imageUrl;
+    img.alt = stampToDisplay.title;
+
+    if (data[0].theme.toLowerCase().includes("postmark")) {
+      imgContainer.classList.add("postmark-image-container");
+    }
+  }
+  
+}
+
+const displayData = (data) => {
+  // make sure data section is visible
+  const dataSection = document.querySelector("#data");
+  dataSection.style.display = "block";
+
+  // clear previously drawn bars
+  const barsContainer = document.querySelector("#bars-container");
+  barsContainer.innerHTML = "";
+  
+  drawBars(data);
+  updateHeading(data);
 }
 
 getAndParseAllData();
