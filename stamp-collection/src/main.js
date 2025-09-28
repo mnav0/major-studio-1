@@ -16,23 +16,14 @@ let groupedData = [];
 // load or write with JSON and fetch historical context for themes here
 const historicalContext = {
   1760: "The Stamp Act of 1765 imposed a direct tax on the colonies by the British government, requiring many printed materials in the colonies to be produced on stamped paper produced in London, carrying an embossed revenue stamp.",
-  1780: "During the American Revolutionary War, the Continental Congress established a postal system to facilitate communication among the colonies and with foreign allies. The first official postmark was introduced in 1787.",
-  1790: "The first U.S. postage stamps were issued in 1847, featuring Benjamin Franklin and George Washington. Before that, letters were often marked with hand-stamped postmarks indicating payment or due postage.",
-  1800: "Embossed postmarks were used on letters to indicate that postage had been paid. These early postmarks were often simple designs embossed directly onto the paper.",
-  1810: "The U.S. Postal Service continued to expand, and postmarks became more standardized. The use of hand-stamped postmarks was common for indicating the date and location of mailing.",
-  1820: "Postmarks evolved to include more detailed information, such as the specific post office location and date of mailing. This helped improve mail sorting and delivery.",
-  1830: "The introduction of the first adhesive postage stamp in the U.S. in 1847 marked a significant advancement in postal services. Postmarks were used to cancel stamps and prevent reuse.",
-  1840: "The U.S. Postal Service introduced the first adhesive postage stamps, featuring Benjamin Franklin and George Washington. Postmarks were used to cancel these stamps.",
-  1850: "Postmarks became more intricate, often including decorative elements. The use of different colors of ink for postmarks also became more common during this period.",
-  1860: "During the Civil War, both the Union and Confederate states issued their own postage stamps. Postmarks from this era often reflect the tumultuous times and the division between North and South.",
-  1870: "The U.S. Postal Service introduced new stamp designs and denominations. Postmarks continued to evolve, with some featuring unique designs to commemorate special events or anniversaries.",
-  1880: "The late 19th century saw the introduction of more elaborate postmarks, including pictorial designs. The use of machine cancellations also began to emerge during this period.",
-  1890: "Postmarks became more standardized across the country, with the U.S. Postal Service implementing uniform designs and formats. This helped improve mail processing efficiency.",
-  1900: "The early 20th century saw the introduction of commemorative stamps and special postmarks for events such as expositions and anniversaries. The use of machine cancellations became more widespread.",
-  1910: "During this decade, the U.S. Postal Service continued to innovate with new stamp designs and postmark styles. Special postmarks were often created for significant events, such as the Panama-Pacific International Exposition in 1915.",
-  1920: "The 1920s saw a boom in stamp collecting, leading to the issuance of numerous commemorative stamps. Postmarks from this era often reflect the cultural and social changes of the time.",
-  1930: "The Great Depression influenced stamp designs and themes, with many stamps commemorating historical events and figures. Postmarks continued to be an essential part of mail processing.",
-  1940: "During World War II, stamps often featured patriotic themes, and postmarks were used to commemorate war-related events. The U.S. Postal Service also introduced new technologies for mail sorting and delivery.",
+  1780: "During the Revolutionary War, the beginnings of the new U.S. postal system relied on manual postmarks with the location and date to facilitate communication among the colonies as they moved away from British-issued stamps.",
+  1800: "The Postal Service Act of 1792 created a formal U.S. Post Office. Experimentation with standardized markings (precursors to embossed seals) reflected the shift toward a national postal identity, independent of Britain.",
+  1840: "The 1847 was the U.S.’s first official stamp release, anchoring Revolutionary leaders like George Washington and Benjamin Franklin as symbols of national legitimacy.",
+  1850: "This decade reflects the popularization of adhesive stamps as postage became standardized and accessible nationwide. At the same time, the growing number of stamps featuring national leaders mirrors the rising sectional tensions before the Civil War, as imagery of unity and founding ideals was used to reinforce national identity amid political division.",
+  1860: "During the Civil War, both the Union and Confederate states issued their own postage stamps. Union issues celebrated Washington, Franklin, and patriotic symbols like the eagle, while Confederate issues showed Davis and state leaders.",
+  1870: "Departmental stamps for Treasury, War, Navy, Agriculture, etc. symbolized Reconstruction and the expansion of federal authority. “Liberty” and “Justice” begin appearing explicitly, echoing post-war ideals of unity and equality.",
+  1880: "An increase in allegorical figures, classical muses, and themes of discovery, anticipating the grand Columbian Exposition of 1893. These designs reveal how the U.S. was using stamps to myth-make national identity, linking classical ideals with narratives of progress and discovery",
+  1890: "The landmark 1893 Columbian Exposition Issue commemorated the 400th anniversary of Columbus’s voyage, with a sprawling set of stamps illustrating discovery, conquest, and nationhood. The popularity of these stamps reflected a Gilded Age America eager to project itself as both modern and rooted in heroic origins.",
 }
 
 const themeNormalization = {
@@ -238,7 +229,7 @@ const parseObject = (objectData) => {
     themes.push(...themesFromRegex);
   }
 
-  if (!!decade && !objectData.title.toLowerCase().includes("cover") && isUSStamp) {
+  if (!!decade && decade < 1900 && decade != 1830 && !objectData.title.toLowerCase().includes("cover") && isUSStamp) {
     stampData.push({
       id: objectData.id,
       media: objectData.content.descriptiveNonRepeating.online_media?.media,
@@ -316,7 +307,7 @@ const getAndParseAllData = () => {
     console.log("Flat Data:", groupedData);
     drawTimeSlider(groupedData);
 
-    setupEntryButton(flatData);
+    setupEntryButton(groupedData);
 
     // for dev:
     // const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
@@ -326,6 +317,7 @@ const getAndParseAllData = () => {
 
 const setupEntryButton = (data) => {
   const entryButton = document.querySelector("#entry-button");
+  entryButton.style.display = "inline-block";
 
   entryButton.addEventListener("click", (e) => {
     enterVisualization(data);
@@ -371,7 +363,7 @@ const drawTimeSlider = (data) => {
     .attr("class", "track")
     .attr("x1", x.range()[0])
     .attr("x2", x.range()[1])
-    .attr("stroke", colors.dark)
+    .attr("stroke", colors.middle)
     .attr("stroke-width", 8)
     .attr("stroke-linecap", "round");
 
@@ -380,7 +372,7 @@ const drawTimeSlider = (data) => {
     .attr("class", "handle")
     .attr("r", 10)
     .attr("cx", x(selectedDecade))
-    .attr("fill", colors.middle)
+    .attr("fill", colors.light)
     .attr("stroke", colors.dark)
     .attr("stroke-width", 2)
     .call(d3.drag()

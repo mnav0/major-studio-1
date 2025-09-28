@@ -108,6 +108,12 @@ p a:hover {
   align-items: center;
 }
 
+.first-stamp-image-container {
+  height: 10em;
+  width: 8em;
+  overflow: hidden;
+}
+
 .first-stamp-thumbnail {
   height: auto;
   width: 17.5em;
@@ -123,4 +129,8 @@ p a:hover {
 
 .postmark-image-container {
   justify-content: flex-start;
+}
+
+#entry-button {
+  display: none;
 }
