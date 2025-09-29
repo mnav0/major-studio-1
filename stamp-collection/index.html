@@ -8,61 +8,63 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap" rel="stylesheet">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./src/style.css" />
     <title>Stamp Collection</title>
   </head>
   <body>
-    <div id="app" class="container">
-      <div class="row">
-        <div id="intro-section" class="col-12 text-center mt-4">
-          <div class="intro-heading">
-            <div class="align-left">
-              <p><strong>1765-1900</strong></p>
-              <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian Institution</a></p>
-            </div>
-            <div class="align-right stamp-example-container">
-              <p class="historical-context">The first stamp proof, created by the British Board of Stamps to be used by American colonies after November 1, 1765</p>
-              <div class="first-stamp-image-container">
-                <img 
-                  src="https://ids.si.edu/ids/deliveryService?id=NPM-0_022044_1c"
-                  alt="First stamp proof from the Stamp Act of 1765" 
-                  class="first-stamp-thumbnail"/>
-              </div>
+    <div id="app">
+      <div id="intro-section">
+        <div class="intro-heading">
+          <div class="align-left">
+            <p><strong>1765-1894</strong></p>
+            <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian Institution</a></p>
+          </div>
+          <div class="align-right stamp-example-container">
+            <p class="historical-context">The first stamp proof, created by the British Board of Stamps to be used by American colonies after November 1, 1765</p>
+            <div class="first-stamp-image-container">
+              <img 
+                src="https://ids.si.edu/ids/deliveryService?id=NPM-0_022044_1c"
+                alt="First stamp proof from the Stamp Act of 1765" 
+                class="first-stamp-thumbnail"/>
             </div>
           </div>
-          <div class="intro-text">
-          <h1>America's Stamp Collection</h1>
-            <p class="subheading">In 1765, The Stamp Act was part of a series of taxes imposed by the British government on American colonies and became key to the King and Parliament declaring full control over the colonies. Colonists strongly opposed this tax that required them to pay the British government for all postage of letters, newspapers, etc. via government-purchased stamps, which became an early symbol of resistance that we can use to trace a path from this pre-revolutionary era through to the beginning of the American Revolution, and ultimately to today.</p>
-            <button id="entry-button">Explore</button>
-          </div>
+        </div>
+        <div class="intro-text">
+        <h1>America's Stamp Collection</h1>
+          <p class="subheading">In 1765, The Stamp Act was part of a series of taxes imposed by the British government on American colonies and became key to the King and Parliament declaring full control over the colonies. Colonists strongly opposed this tax that required them to pay the British government for all postage of letters, newspapers, etc. via government-purchased stamps, which became an early symbol of resistance that we can use to trace a path from this pre-revolutionary era through to the beginning of the American Revolution, and ultimately to today.</p>
+          <button id="entry-button">Explore</button>
         </div>
       </div>
 
-      <div id="data" class="row">
-        <div class="col-12 chart-heading">
+      <div id="data">
+        <div class="intro-heading">
           <div class="align-left">
-            <p class="chart-dates-results">themes sample</p>
-            <h2 id="chart-main-themes">text</h2>
+            <p class="chart-dates-results"></p>
+            <h2 id="chart-main-themes"></h2>
           </div>
-          <div class="align-right"> 
-            <p class="historical-context"></p>
-            <div class="stamp-image-container"></div>
+          <div class="align-right stamp-example-container"> 
+            <p class="historical-context" id="historical-context"></p>
+            <div id="stamp-highlight" class="stamp-image-container">
+               <img 
+                  src=""
+                  class="stamp-thumbnail"
+                  id="stamp-highlight-image" />
+            </div>
           </div>
         </div>
 
-        <div class="col-12" id="slider-container">
+        <div id="slider-container">
           <!-- slider goes here -->
         </div>
 
-        <div class="col-12" id="bars-container">
+        <div id="bars-container">
           <!-- bars go here -->
         </div>
 
-      <div class="footer col-12">
-        <p><strong>America’s Stamp Collection</strong></p>
-        <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian National Postal Museum</a></p>
+        <div class="footer col-12">
+          <p><strong>America’s Stamp Collection</strong></p>
+          <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian National Postal Museum</a></p>
+        </div>
       </div>
 
     </div>
