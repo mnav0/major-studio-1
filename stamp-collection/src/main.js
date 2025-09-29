@@ -1,10 +1,7 @@
 import * as d3 from "d3";
-
-const colors = {
-  middle: '#cbb28e',
-  light: '#f2e5d1',
-  dark: '#6b5347'
-};
+import { themeBuckets, themeNormalization, themePriority } from "./constants/themes.js";
+import { colors } from "./constants/colors.js";
+import { historicalContext } from "./constants/context.js";
 
 let selectedDecade = 1760;
 
@@ -12,108 +9,6 @@ let selectedDecade = 1760;
 let stampData = [];
 
 let groupedData = [];
-
-// load or write with JSON and fetch historical context for themes here
-const historicalContext = {
-  1760: "The Stamp Act of 1765 imposed a direct tax on the colonies by the British government, requiring many printed materials in the colonies to be produced on stamped paper produced in London, carrying an embossed revenue stamp.",
-  1780: "During the Revolutionary War, the beginnings of the new U.S. postal system relied on manual postmarks with the location and date to facilitate communication among the colonies as they moved away from British-issued stamps.",
-  1800: "The Postal Service Act of 1792 created a formal U.S. Post Office. Experimentation with standardized markings (precursors to embossed seals) reflected the shift toward a national postal identity, independent of Britain.",
-  1840: "The 1847 was the U.S.’s first official stamp release, anchoring Revolutionary leaders like George Washington and Benjamin Franklin as symbols of national legitimacy.",
-  1850: "This decade reflects the popularization of adhesive stamps as postage became standardized and accessible nationwide. At the same time, the growing number of stamps featuring national leaders mirrors the rising sectional tensions before the Civil War, as imagery of unity and founding ideals was used to reinforce national identity amid political division.",
-  1860: "During the Civil War, both the Union and Confederate states issued their own postage stamps. Union issues celebrated Washington, Franklin, and patriotic symbols like the eagle, while Confederate issues showed Davis and state leaders.",
-  1870: "Departmental stamps for Treasury, War, Navy, Agriculture, etc. symbolized Reconstruction and the expansion of federal authority. “Liberty” and “Justice” begin appearing explicitly, echoing post-war ideals of unity and equality.",
-  1880: "An increase in allegorical figures, classical muses, and themes of discovery, anticipating the grand Columbian Exposition of 1893. These designs reveal how the U.S. was using stamps to myth-make national identity, linking classical ideals with narratives of progress and discovery",
-  1890: "The landmark 1893 Columbian Exposition Issue commemorated the 400th anniversary of Columbus’s voyage, with a sprawling set of stamps illustrating discovery, conquest, and nationhood. The popularity of these stamps reflected a Gilded Age America eager to project itself as both modern and rooted in heroic origins.",
-}
-
-const themeBuckets = {
-  "Founding Figures": [
-    "George Washington","Benjamin Franklin","Thomas Jefferson",
-    "Alexander Hamilton","James Madison","Daniel Webster","Henry Clay","John Marshall"
-  ],
-  "Military Figures": [
-    "Ulysses Grant","William Sherman","James Garfield","Andrew Jackson",
-    "Abraham Lincoln","Jefferson Davis","Oliver Perry","Zachary Taylor",
-    "Edwin M. Stanton","Winfield Scott"
-  ],
-  "Independence": [
-    "Liberty","Justice","Freedom","Independence","Peace",
-    "Union","Equality","Democracy","Eagle"
-  ],
-  "Allegories": [
-    "Clio", "Ceres","Vesta", "Minerva"
-  ],
-  "Discovering America": [
-    "Christopher Columbus","Queen Isabella","Pilgrim","Mayflower","Centennial","Exposition"
-  ],
-  "Postal System": [
-    "Post Office","Messenger","Newspaper","Manual postmark","Embossed postmark"
-  ],
-  "Colonization, Control": [
-    "British Crown"
-  ],
-  "War, Victory": [
-    "Battle","Soldier","War","Confederate","Victory"
-  ],
-  "Government": [
-    "Constitution","Congress","Treasury","State","Navy","Agriculture","Tax","Locomotive","Adriatic"
-  ]
-};
-
-const themeNormalization = {
-  // Standardize spelling variants
-  "isabela": "Queen Isabella",
-  "isabella": "Queen Isabella",
-  "columbus": "Christopher Columbus",
-
-  "post office": "Post Office",
-  "postmaster": "Post Office",
-  "postmark": "Post Office",
-  "envelope": "Post Office",
-  "envelopes": "Post Office",
-
-  "soldier": "Soldier",
-  "soldiers": "Soldier",
-
-  "newspaper": "Newspaper",
-  "newspapers": "Newspaper",
-
-  "washington": "George Washington",
-  "franklin": "Benjamin Franklin",
-  "jefferson": "Thomas Jefferson",
-  "hamilton": "Alexander Hamilton",
-  "madison": "James Madison",
-
-  "grant": "Ulysses Grant",
-  "sherman": "William Sherman",
-  "garfield": "James Garfield",
-
-  "jackson": "Andrew Jackson",
-  "lincoln": "Abraham Lincoln",
-  "webster": "Daniel Webster",
-  "davis": "Jefferson Davis",
-  "clay": "Henry Clay",
-
-  "perry": "Oliver Perry",
-  "taylor": "Zachary Taylor",
-  "stanton": "Edwin Stanton",
-  "marshall": "John Marshall",
-  "scott": "Winfield Scott"
-};
-
-// Priority order: first match wins if multiple themes present
-const themePriority = [
-  "George Washington","Benjamin Franklin","Thomas Jefferson","Alexander Hamilton","James Madison",
-  "Ulysses Grant","William Sherman","James Garfield","Andrew Jackson","Abraham Lincoln",
-  "Daniel Webster","Jefferson Davis","Henry Clay","Oliver Perry","Zachary Taylor",
-  "Edwin Stanton","John Marshall","Winfield Scott",
-  "Liberty","Justice","Freedom","Independence","Victory","Peace","Union","Equality","Democracy","Eagle",
-  "Clio", "Ceres","Vesta", "Minerva",
-  "Christopher Columbus","Queen Isabella","Pilgrim","Mayflower","Centennial","Exposition",
-  "Post Office","Messenger","Newspaper",
-  "Battle","Soldier","War","Confederate",
-  "Constitution","Congress","Treasury","State","Navy","Agriculture","Tax","Locomotive","Adriatic"
-];
 
 // Build regex from all keys/values
 const themesRegex = new RegExp(
@@ -305,14 +200,9 @@ const getAndParseAllData = () => {
     const grouped = groupByDecadeAndTheme(stampData);
     groupedData = flattenGroupedData(grouped);
 
-    console.log("Flat Data:", groupedData);
     drawTimeSlider(groupedData);
 
     setupEntryButton(groupedData);
-
-    // for dev:
-    // const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-    // displayData(dataToDisplay);
   })
 }
 
