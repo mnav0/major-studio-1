@@ -26,10 +26,45 @@ const historicalContext = {
   1890: "The landmark 1893 Columbian Exposition Issue commemorated the 400th anniversary of Columbus’s voyage, with a sprawling set of stamps illustrating discovery, conquest, and nationhood. The popularity of these stamps reflected a Gilded Age America eager to project itself as both modern and rooted in heroic origins.",
 }
 
+const themeBuckets = {
+  "Founding Figures": [
+    "George Washington","Benjamin Franklin","Thomas Jefferson",
+    "Alexander Hamilton","James Madison","Daniel Webster","Henry Clay","John Marshall"
+  ],
+  "Military Figures": [
+    "Ulysses Grant","William Sherman","James Garfield","Andrew Jackson",
+    "Abraham Lincoln","Jefferson Davis","Oliver Perry","Zachary Taylor",
+    "Edwin M. Stanton","Winfield Scott"
+  ],
+  "Independence": [
+    "Liberty","Justice","Freedom","Independence","Peace",
+    "Union","Equality","Democracy","Eagle"
+  ],
+  "Allegories": [
+    "Clio", "Ceres","Vesta", "Minerva"
+  ],
+  "Discovering America": [
+    "Christopher Columbus","Queen Isabella","Pilgrim","Mayflower","Centennial","Exposition"
+  ],
+  "Postal System": [
+    "Post Office","Messenger","Newspaper","Manual postmark","Embossed postmark"
+  ],
+  "Colonization, Control": [
+    "British Crown"
+  ],
+  "War, Victory": [
+    "Battle","Soldier","War","Confederate","Victory"
+  ],
+  "Government": [
+    "Constitution","Congress","Treasury","State","Navy","Agriculture","Tax","Locomotive","Adriatic"
+  ]
+};
+
 const themeNormalization = {
   // Standardize spelling variants
-  "isabela": "Isabella",
-  "isabella": "Isabella",
+  "isabela": "Queen Isabella",
+  "isabella": "Queen Isabella",
+  "columbus": "Christopher Columbus",
 
   "post office": "Post Office",
   "postmaster": "Post Office",
@@ -43,89 +78,75 @@ const themeNormalization = {
   "newspaper": "Newspaper",
   "newspapers": "Newspaper",
 
-  // Group allegorical figures together
-  "clio": "Muses",
-  "vesta": "Muses",
-  "ceres": "Muses",
-  "maiden": "Muses"
+  "washington": "George Washington",
+  "franklin": "Benjamin Franklin",
+  "jefferson": "Thomas Jefferson",
+  "hamilton": "Alexander Hamilton",
+  "madison": "James Madison",
+
+  "grant": "Ulysses Grant",
+  "sherman": "William Sherman",
+  "garfield": "James Garfield",
+
+  "jackson": "Andrew Jackson",
+  "lincoln": "Abraham Lincoln",
+  "webster": "Daniel Webster",
+  "davis": "Jefferson Davis",
+  "clay": "Henry Clay",
+
+  "perry": "Oliver Perry",
+  "taylor": "Zachary Taylor",
+  "stanton": "Edwin Stanton",
+  "marshall": "John Marshall",
+  "scott": "Winfield Scott"
 };
 
-const themeBuckets = {
-  "Founding Figures": [
-    "Washington","Franklin","Jefferson","Hamilton","Lafayette","Madison",
-    "Grant","Sherman","Garfield","Jackson","Lincoln","Webster","Davis","Clay",
-    "Perry","Taylor","Stanton","Marshall","Scott","Winfield"
-  ],
-  "Ideals & Allegories": [
-    "Liberty","Justice","Freedom","Independence","Victory","Peace","Union","Equality",
-    "Democracy","Muses","Eagle"
-  ],
-  "Mythmaking & Identity": [
-    "Columbus","Isabella","Pilgrim","Mayflower","Centennial","Exposition"
-  ],
-  "Postal System": [
-    "Post Office","Provisional","Messenger","Newspaper","Department"
-  ],
-  "Military & War": [
-    "Battle","Soldier","War","Confederate"
-  ],
-  "Government & Institutions": [
-    "Constitution","Congress","Treasury","State","Navy","Agriculture","Tax","Locomotive","Adriatic"
-  ]
-};
+// Priority order: first match wins if multiple themes present
+const themePriority = [
+  "George Washington","Benjamin Franklin","Thomas Jefferson","Alexander Hamilton","James Madison",
+  "Ulysses Grant","William Sherman","James Garfield","Andrew Jackson","Abraham Lincoln",
+  "Daniel Webster","Jefferson Davis","Henry Clay","Oliver Perry","Zachary Taylor",
+  "Edwin Stanton","John Marshall","Winfield Scott",
+  "Liberty","Justice","Freedom","Independence","Victory","Peace","Union","Equality","Democracy","Eagle",
+  "Clio", "Ceres","Vesta", "Minerva",
+  "Christopher Columbus","Queen Isabella","Pilgrim","Mayflower","Centennial","Exposition",
+  "Post Office","Messenger","Newspaper",
+  "Battle","Soldier","War","Confederate",
+  "Constitution","Congress","Treasury","State","Navy","Agriculture","Tax","Locomotive","Adriatic"
+];
 
+// Build regex from all keys/values
 const themesRegex = new RegExp(
   "\\b(" +
-    [
-      ...Object.values(themeBuckets).flat(),
-      ...Object.keys(themeNormalization) // make sure variants are caught
-    ].join("|") +
+    [...new Set([
+      ...Object.keys(themeNormalization),
+      ...Object.values(themeNormalization),
+      ...themePriority
+    ])].join("|") +
   ")\\b",
   "gi"
 );
 
-const themePriority = [
-  "Washington","Franklin","Jefferson","Hamilton","Lafayette","Madison",
-  "Grant","Sherman","Garfield","Jackson","Lincoln","Webster","Davis","Clay",
-  "Perry","Taylor","Stanton","Marshall","Scott","Winfield", // Founding Figures first
-  "Liberty","Justice","Freedom","Independence","Victory","Peace","Union","Equality",
-  "Democracy","Muses","Eagle", // Ideals
-  "Columbus","Isabella","Muses","Pilgrim","Mayflower","Centennial","Exposition", // Mythmaking
-  "Post Office","Provisional","Messenger","Newspaper", // Postal System
-  "Battle","Soldier","War","Confederate", // Military
-  "Constitution","Congress","Treasury","State","Navy","Agriculture","Tax","Locomotive","Adriatic", "Department" // Government
-];
-
-function extractThemesWithContext(text) {
-  if (!text) return [];
+function extractTheme(text) {
+  if (!text) return null;
 
   const matches = text.match(themesRegex);
-  if (!matches) return [];
+  if (!matches) return null;
 
-  // Normalize and dedupe
+  // Normalize variants
   const normalized = [...new Set(matches.map(m => {
-    const rawKey = m.toLowerCase();
-    return themeNormalization[rawKey] || m;
+    const raw = m.toLowerCase();
+    return themeNormalization[raw] || m;
   }))];
 
-  // Assign based on priority (first one that appears in themePriority wins)
+  // Pick highest priority theme
   for (const theme of themePriority) {
     if (normalized.some(n => n.toLowerCase() === theme.toLowerCase())) {
-      let bucket = "Other";
-      for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
-        if (keywords.map(k => k.toLowerCase()).includes(theme.toLowerCase())) {
-          bucket = bucketName;
-          break;
-        }
-      }
-      return [{
-        keyword: theme,
-        bucket
-      }];
+      return theme;
     }
   }
 
-  return [];
+  return null;
 }
 
 // search: fetches an array of terms based on term category
@@ -185,80 +206,61 @@ const fetchAllData = (url) => {
 
 // add only the necessary data to our array
 const parseObject = (objectData) => { 
-  // some dates are in different places
   let rawYearData;
   if (objectData.content.indexedStructured.date) {
     rawYearData = parseInt(objectData.content.indexedStructured.date[0].slice(0, 4));
   } else if (objectData.content.freetext.date) {
     const firstDateContent = objectData.content.freetext?.date[0].content;
-    rawYearData = parseInt(firstDateContent.slice(firstDateContent.length - 4, firstDateContent.length));
+    rawYearData = parseInt(firstDateContent.slice(-4));
   }
 
   const decade = Math.floor(rawYearData / 10) * 10;
 
-  // some locations are in different places
   let currentPlace = "";
-  if(objectData.content.indexedStructured.place) {
+  if (objectData.content.indexedStructured.place) {
     currentPlace = objectData.content.indexedStructured.place[0];
   }
 
-  let isUSStamp = false;
-  let isUSTopic = objectData.content.indexedStructured.topic?.includes("U.S. Stamps") || objectData.content.indexedStructured.topic?.includes("Ernest K. Ackerman Collection of U.S. Proofs") || objectData.content.indexedStructured.topic?.includes("'American Expansion (1800-1860)'");
-  let isUSPlace = (currentPlace.toLowerCase().includes("united states") || currentPlace.toLowerCase().includes("u.s.") || currentPlace.toLowerCase().includes("confederate states of america") || currentPlace.toLowerCase().includes("us"));
-
-  if (isUSTopic || isUSPlace) {
-    isUSStamp = true;
-  }
+  const isUSTopic = objectData.content.indexedStructured.topic?.includes("U.S. Stamps");
+  const isUSPlace = currentPlace.toLowerCase().includes("united states");
+  if (!(isUSTopic || isUSPlace)) return;
 
   const notes = objectData.content.freetext.notes?.[0].content || "";
   const title = objectData.title || "";
 
-  const themes = [];
+  let theme;
 
-  // --- Add manual overrides for early decades ---
+  // Manual overrides for early decades
   if (decade <= 1800) {
-    if (decade == 1760) {
-      themes.push({ keyword: "British Crown", bucket: "Uncategorized", context: "Stamp Act taxation under British rule" });
-    } else if (decade == 1780) {
-      themes.push({ keyword: "Manual postmark", bucket: "Uncategorized", context: "Colonial self-sufficient postal system emerging" });
-    } else {
-      themes.push({ keyword: "Embossed postmark", bucket: "Uncategorized", context: "Move toward embossed postmarks before stamps" });
-    }
+    if (decade === 1760) theme = "British Crown";
+    else if (decade === 1780) theme = "Manual postmark";
+    else theme = "Embossed postmark";
   } else {
-    const themesFromRegex = extractThemesWithContext(title);
-    themes.push(...themesFromRegex);
+    theme = extractTheme(title);
   }
 
-  if (!!decade && decade < 1900 && decade != 1830 && !objectData.title.toLowerCase().includes("cover") && isUSStamp) {
+  if (decade && decade < 1900 && theme) {
     stampData.push({
       id: objectData.id,
       media: objectData.content.descriptiveNonRepeating.online_media?.media,
       decade,
       title,
       notes,
-      themes
-    })
+      theme // single string
+    });
   }
-}
+};
 
 function groupByDecadeAndTheme(stampData) {
   const result = {};
 
   stampData.forEach(stamp => {
-    const decade = stamp.decade;
+    const { decade, theme } = stamp;
     if (!result[decade]) result[decade] = {};
+    if (!result[decade][theme]) result[decade][theme] = { count: 0, stamps: [] };
 
-    stamp.themes.forEach(theme => {
-      const keyword = theme.keyword;
-      const bucket = theme.bucket;
-
-      if (!result[decade][keyword]) {
-        result[decade][keyword] = { count: 0, bucket, stamps: [] };
-      }
-
-      result[decade][keyword].count++;
-      result[decade][keyword].stamps.push(stamp);
-    });
+    result[decade][theme].count++;
+    result[decade][theme].stamps.push(stamp);
   });
 
   return result;
@@ -268,11 +270,10 @@ function flattenGroupedData(groupedData) {
   const rows = [];
   for (const [decade, themes] of Object.entries(groupedData)) {
     const decadeNum = Number(decade);
-    for (const [keyword, data] of Object.entries(themes)) {
+    for (const [theme, data] of Object.entries(themes)) {
       rows.push({
         decade: decadeNum,
-        theme: keyword,
-        bucket: data.bucket,
+        theme,           // single string
         count: data.count,
         stamps: data.stamps // full stamp objects included
       });
@@ -340,9 +341,9 @@ const drawTimeSlider = (data) => {
   // and reassigns selectedDecade on change
   const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
 
-  const minSliderWidth = 1000;
-  const margin = { top: 20, right: 30, bottom: 40, left: 150 },
-      sliderWidth = Math.max(minSliderWidth, window.innerWidth - margin.left - margin.right - 100),
+  const minSliderWidth = 768;
+  const margin = { top: 20, right: 20, bottom: 40, left: 20 },
+      sliderWidth = Math.max(minSliderWidth, window.innerWidth * 0.9),
       sliderHeight = 100;
 
   const svg = d3.select("#slider-container")
@@ -352,7 +353,7 @@ const drawTimeSlider = (data) => {
 
   const x = d3.scaleLinear()
     .domain([d3.min(decades), d3.max(decades)])
-    .range([50, sliderWidth - 50])
+    .range([margin.left, sliderWidth - margin.right])
     .clamp(true);
 
   const slider = svg.append("g")
@@ -372,7 +373,7 @@ const drawTimeSlider = (data) => {
     .attr("class", "handle")
     .attr("r", 10)
     .attr("cx", x(selectedDecade))
-    .attr("fill", colors.light)
+    .attr("fill", colors.middle)
     .attr("stroke", colors.dark)
     .attr("stroke-width", 2)
     .call(d3.drag()
@@ -409,8 +410,8 @@ const drawTimeSlider = (data) => {
       .attr("class", "tick")
       .attr("x1", d => x(d))
       .attr("x2", d => x(d))
-      .attr("y1", -10)
-      .attr("y2", 10)
+      .attr("y1", -9)
+      .attr("y2", 9)
       .attr("stroke", colors.middle)
       .attr("stroke-width", 1);
 }
@@ -422,8 +423,8 @@ const drawBars = (data) => {
   const length = data.length;
 
   // set dimensions and margins for the chart
-  const margin = { top: 20, right: 30, bottom: 40, left: 150 },
-        width = window.innerWidth - margin.left - margin.right - 400,
+  const margin = { top: 20, right: 30, bottom: 40, left: 125 },
+        width = window.innerWidth * 0.9 - margin.left - margin.right,
         heightScale = length * 64,
         maxCount = 90;
 
@@ -499,6 +500,15 @@ const drawBars = (data) => {
       .text(d => d.count);
 }
 
+function findBucketForTheme(theme) {
+  for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
+    if (keywords.map(k => k.toLowerCase()).includes(theme.toLowerCase())) {
+      return bucketName;
+    }
+  }
+  return "Other";
+}
+
 // when passed to here the data is already sorted by count descending and filtered by decade
 const updateHeading = (data) => {
   // calculate total number of stamps in this decade
@@ -509,13 +519,22 @@ const updateHeading = (data) => {
 
   // update the subheading with the selected decade and number of stamps
   const heading = document.querySelector(".chart-dates-results");
-  heading.innerHTML = `Themes of U.S. Stamps from the ${selectedDecade}s <strong>(${stampsCount} stamps)</strong>`;
+  heading.innerHTML = `Themes of the ${selectedDecade}s <strong>(${stampsCount} stamps)</strong>`;
 
   const mainThemes = document.querySelector("#chart-main-themes");
-  const theme1 = data[0] ? data[0].theme : "";
-  const theme2 = data[1] ? data[1].theme : "";
+  const seenBuckets = new Set();
+  const topBuckets = [];
 
-  mainThemes.innerHTML = `${theme1}${theme2 ? ", " + theme2 : ""}`;
+  for (const themeObj of data) {
+    const bucket = findBucketForTheme(themeObj.theme);
+    if (!seenBuckets.has(bucket)) {
+      topBuckets.push(bucket);
+      seenBuckets.add(bucket);
+    }
+    if (topBuckets.length >= 2) break;
+  }
+
+  mainThemes.innerHTML = topBuckets.join(", ");
 
   // update the historical context paragraph
   const histContext = document.querySelector("#historical-context");
