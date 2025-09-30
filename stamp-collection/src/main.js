@@ -3,46 +3,10 @@ import { themeBuckets, themeNormalization, themePriority } from "./constants/the
 import { colors } from "./constants/colors.js";
 import { historicalContext } from "./constants/context.js";
 
+// state variables
 let selectedDecade = 1760;
-
-// array of stamp data based on Smithsonian API
 let stampData = [];
-
 let groupedData = [];
-
-// Build regex from all keys/values
-const themesRegex = new RegExp(
-  "\\b(" +
-    [...new Set([
-      ...Object.keys(themeNormalization),
-      ...Object.values(themeNormalization),
-      ...themePriority
-    ])].join("|") +
-  ")\\b",
-  "gi"
-);
-
-function extractTheme(text) {
-  if (!text) return null;
-
-  const matches = text.match(themesRegex);
-  if (!matches) return null;
-
-  // Normalize variants
-  const normalized = [...new Set(matches.map(m => {
-    const raw = m.toLowerCase();
-    return themeNormalization[raw] || m;
-  }))];
-
-  // Pick highest priority theme
-  for (const theme of themePriority) {
-    if (normalized.some(n => n.toLowerCase() === theme.toLowerCase())) {
-      return theme;
-    }
-  }
-
-  return null;
-}
 
 // search: fetches an array of terms based on term category
 const constructAndFetchQueries = (searchTerm) => {
@@ -145,6 +109,49 @@ const parseObject = (objectData) => {
     });
   }
 };
+
+// Build regex from all keys/values
+const themesRegex = new RegExp(
+  "\\b(" +
+    [...new Set([
+      ...Object.keys(themeNormalization),
+      ...Object.values(themeNormalization),
+      ...themePriority
+    ])].join("|") +
+  ")\\b",
+  "gi"
+);
+
+function extractTheme(text) {
+  if (!text) return null;
+
+  const matches = text.match(themesRegex);
+  if (!matches) return null;
+
+  // Normalize variants
+  const normalized = [...new Set(matches.map(m => {
+    const raw = m.toLowerCase();
+    return themeNormalization[raw] || m;
+  }))];
+
+  // Pick highest priority theme
+  for (const theme of themePriority) {
+    if (normalized.some(n => n.toLowerCase() === theme.toLowerCase())) {
+      return theme;
+    }
+  }
+
+  return null;
+}
+
+function findBucketForTheme(theme) {
+  for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
+    if (keywords.map(k => k.toLowerCase()).includes(theme.toLowerCase())) {
+      return bucketName;
+    }
+  }
+  return "Other";
+}
 
 function groupByDecadeAndTheme(stampData) {
   const result = {};
@@ -388,15 +395,6 @@ const drawBars = (data) => {
       .attr("y", d => y(d.theme) + y.bandwidth() / 2)
       .attr("alignment-baseline", "middle")
       .text(d => d.count);
-}
-
-function findBucketForTheme(theme) {
-  for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
-    if (keywords.map(k => k.toLowerCase()).includes(theme.toLowerCase())) {
-      return bucketName;
-    }
-  }
-  return "Other";
 }
 
 // when passed to here the data is already sorted by count descending and filtered by decade

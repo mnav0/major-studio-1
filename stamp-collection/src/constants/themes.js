@@ -52,6 +52,7 @@ const themeNormalization = {
   "newspapers": "Newspaper",
 
   "washington": "George Washington",
+  "davis": "Jefferson Davis",
   "franklin": "Benjamin Franklin",
   "jefferson": "Thomas Jefferson",
   "hamilton": "Alexander Hamilton",
@@ -64,7 +65,6 @@ const themeNormalization = {
   "jackson": "Andrew Jackson",
   "lincoln": "Abraham Lincoln",
   "webster": "Daniel Webster",
-  "davis": "Jefferson Davis",
   "clay": "Henry Clay",
 
   "perry": "Oliver Perry",
@@ -76,9 +76,9 @@ const themeNormalization = {
 
 // Priority order: first match wins if multiple themes present
 const themePriority = [
-  "George Washington","Benjamin Franklin","Thomas Jefferson","Alexander Hamilton","James Madison",
+  "George Washington","Benjamin Franklin","Jefferson Davis","Thomas Jefferson","Alexander Hamilton","James Madison",
   "Ulysses Grant","William Sherman","James Garfield","Andrew Jackson","Abraham Lincoln",
-  "Daniel Webster","Jefferson Davis","Henry Clay","Oliver Perry","Zachary Taylor",
+  "Daniel Webster","Henry Clay","Oliver Perry","Zachary Taylor",
   "Edwin Stanton","John Marshall","Winfield Scott",
   "Liberty","Justice","Freedom","Independence","Victory","Peace","Union","Equality","Democracy","Eagle",
   "Clio", "Ceres","Vesta", "Minerva",
