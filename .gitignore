@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+quant-stamp-data.json
+flattened-data.json
 
 # Editor directories and files
 .vscode/*

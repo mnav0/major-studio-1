@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite'
+import path from 'path';
 
 export default defineConfig({
-  root: '.', // project root
   base: '/major-studio-1/', // base public path when served in production
   build: {
-    outDir: 'dist',   // where to output the built files
-    emptyOutDir: true // clean outDir before building
+    rollupOptions: {
+      input: {
+        'stamp-collection': path.resolve(__dirname, 'stamp-collection/index.html')
+      }
+    }
   }
 })
