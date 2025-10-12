@@ -141,6 +141,20 @@ p a:hover {
   width: auto;
 }
 
+.stamp-image-container-small {
+  height: 4em;
+  width: 3em;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stamp-image-small {
+  height: 4em;
+  width: auto;
+}
+
 .postmark-image-container {
   justify-content: flex-start;
 }
@@ -151,4 +165,9 @@ p a:hover {
 
 #bars-container {
   min-height: 400px;
+}
+
+#images-container {
+  display: flex;
+  flex-wrap: wrap;
 }
