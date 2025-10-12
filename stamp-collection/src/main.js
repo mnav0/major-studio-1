@@ -2,9 +2,20 @@ import * as d3 from "d3";
 import { themeBuckets, themeNormalization, themePriority } from "./constants/themes.js";
 import { colors } from "./constants/colors.js";
 import { historicalContext } from "./constants/context.js";
+import { removeBackground } from '@imgly/background-removal';
+import { Jimp } from "jimp";
+
+// Remove the background
+const removeImgBackgrounds = async(imageUrl) => {
+  const newBlob = await removeBackground(imageUrl);
+  // Convert the blob to a URL to display the new image
+  const url = URL.createObjectURL(newBlob);
+
+  return url;
+}
 
 // state variables
-let selectedDecade = 1760;
+let selectedDecade = 1850;
 let stampData = [];
 let groupedData = [];
 
@@ -98,15 +109,23 @@ const parseObject = (objectData) => {
     theme = extractTheme(title);
   }
 
-  if (decade && decade < 1900 && theme) {
-    stampData.push({
-      id: objectData.id,
-      media: objectData.content.descriptiveNonRepeating.online_media?.media,
-      decade,
-      title,
-      notes,
-      theme // single string
-    });
+  debugger;
+  const media = objectData.content.descriptiveNonRepeating.online_media?.media;
+  
+  if (media && theme == "Benjamin Franklin") {
+    const thumbnailHash = getImageHash(media[0]?.thumbnail);
+
+    if (decade && decade < 1900 && theme) {
+      stampData.push({
+        id: objectData.id,
+        media,
+        decade,
+        title,
+        notes,
+        thumbnailHash,
+        theme // single string
+      });
+    }
   }
 };
 
@@ -313,6 +332,31 @@ const drawTimeSlider = (data) => {
       .attr("stroke-width", 1);
 }
 
+const displayImages = (data) => {
+  const imagesContainer = document.querySelector("#images-container");
+  imagesContainer.innerHTML = "";
+
+  const sortedStampsByHash = data[0].stamps.sort((a, b) => a.thumbnailHash - b.thumbnailHash);
+
+  sortedStampsByHash.forEach((stamp) => {
+    if (stamp.theme == "Benjamin Franklin") {
+      if (stamp.media && stamp.media.length > 0) {
+        const img = document.createElement("img");
+        const imgLink = stamp.media[0].thumbnail;
+        img.src = imgLink;
+        img.alt = stamp.title;
+        img.title = stamp.title;
+        img.classList.add("stamp-image-small");
+
+        const container = document.createElement("div");
+        container.classList.add("stamp-image-container-small");
+        container.appendChild(img);
+        imagesContainer.appendChild(container);
+      }
+    }
+  });
+}
+
 const drawBars = (data) => {
   // build a d3 bar chart based off of data grouping by decade and theme
   // one bar for each decade - theme pairing
@@ -398,7 +442,7 @@ const drawBars = (data) => {
 }
 
 // when passed to here the data is already sorted by count descending and filtered by decade
-const updateHeading = (data) => {
+const updateHeading = async (data) => {
   // calculate total number of stamps in this decade
   let stampsCount = 0;
   data.forEach((d) => {
@@ -445,9 +489,12 @@ const updateHeading = (data) => {
     const topThemeStampsWithImages = data[0].stamps.filter(s => s.media && s.media.length > 0);
     stampToDisplay = topThemeStampsWithImages[Math.floor(Math.random() * topThemeStampsWithImages.length)];
   }
+  
 
   if (stampToDisplay) {
     const imageUrl = stampToDisplay.media[0].thumbnail;
+    // remove background from image before displaying
+    // const imageUrlNoBg = await removeImgBackgrounds(imageUrl);
     img.src = imageUrl;
     img.alt = stampToDisplay.title;
 
@@ -458,16 +505,31 @@ const updateHeading = (data) => {
   
 }
 
+async function getImageHash(imagePath) {
+  try {
+    const image = await Jimp.read(imagePath);
+    const hash = image.hash(); // Returns a 64-bit perceptual hash
+    return hash;
+  } catch (err) {
+    return null;
+  }
+}
+
 const displayData = (data) => {
   // make sure data section is visible
   const dataSection = document.querySelector("#data");
   dataSection.style.display = "block";
 
-  // clear previously drawn bars
-  const barsContainer = document.querySelector("#bars-container");
-  barsContainer.innerHTML = "";
+  // // clear previously drawn bars
+  // const barsContainer = document.querySelector("#bars-container");
+  // barsContainer.innerHTML = "";
   
-  drawBars(data);
+  // drawBars(data);
+
+  // clear previously displayed images
+  const imagesContainer = document.querySelector("#images-container");
+  imagesContainer.innerHTML = "";
+  displayImages(data);
   updateHeading(data);
 }
 
