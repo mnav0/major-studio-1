@@ -10,3 +10,10 @@ export const historicalContext = {
   1880: "During the Gilded Age, America's rapid economic and industrial growth coincides with a continued depiction of Revolutionary figures, Civil War heroes, and patriotic symbols on stamps.",
   1890: "The 1893 Columbian Exposition for the 400th anniversary of Columbus's voyage is marked by an increase in stamps celebrating national pride through historical memory.",
 };
+
+export const postalContext = {
+  1760: "First stamp proof is created by the British to tax American colonies",
+  1840: "First official stamp release in the U. S.",
+  1860: "Confederate states create a separate postal system leading up to the Civil War",
+  1890: "First commemorative stamp release in the U. S."
+}

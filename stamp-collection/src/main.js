@@ -1,7 +1,8 @@
 import * as d3 from "d3";
 import { themeBuckets, themeNormalization, themePriority } from "./constants/themes.js";
 import { colors } from "./constants/colors.js";
-import { historicalContext } from "./constants/context.js";
+import { historicalContext, postalContext } from "./constants/context.js";
+import { Vibrant } from "node-vibrant/browser";
 
 // state variables
 let selectedDecade = 1760;
@@ -97,6 +98,26 @@ const parseObject = (objectData) => {
   } else {
     theme = extractTheme(title);
   }
+
+
+  /** 
+  const thumbnail = objectData.content.descriptiveNonRepeating.online_media?.media[0]?.thumbnail;
+
+  const colors = []
+  // Using builder
+  Vibrant.from(thumbnail)
+    .getPalette()
+    .then((palette) => {
+      colors.push(palette.Vibrant.hex);
+      colors.push(palette.Muted.hex);
+      // colors.push(palette.DarkVibrant.hex);
+      colors.push(palette.LightVibrant.hex);
+      // colors.push(palette.DarkMuted.hex);
+      colors.push(palette.LightMuted.hex);
+    });
+  */
+
+
 
   if (decade && decade < 1900 && theme) {
     stampData.push({
@@ -234,167 +255,210 @@ const drawTimeSlider = (data) => {
   const sliderSection = document.querySelector("#slider-container");
   sliderSection.style.display = "block";
 
-  // draw a slider with d3 that parses the decades from the data 
-  // and reassigns selectedDecade on change
   const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
 
-  const minSliderWidth = 768;
-  const margin = { top: 20, right: 20, bottom: 40, left: 20 },
-      sliderWidth = Math.max(minSliderWidth, window.innerWidth * 0.9),
-      sliderHeight = 100;
+  // Create vertical timeline structure
+  const margin = { top: 15, right: 0, bottom: 40, left: 200 };
+  const width = 300;
+  const height = 700;
 
   const svg = d3.select("#slider-container")
     .append("svg")
-    .attr("width", sliderWidth)
-    .attr("height", sliderHeight);
+    .attr("width", width)
+    .attr("height", height);
 
-  const x = d3.scaleLinear()
+  // Create vertical scale
+  const y = d3.scaleLinear()
     .domain([d3.min(decades), d3.max(decades)])
-    .range([margin.left, sliderWidth - margin.right])
-    .clamp(true);
+    .range([margin.top, height - margin.bottom]);
 
-  const slider = svg.append("g")
-    .attr("class", "slider")
-    .attr("transform", `translate(0,${sliderHeight / 2})`);
+  const timeline = svg.append("g")
+    .attr("class", "timeline")
+    .attr("transform", `translate(${margin.left},0)`);
 
-  slider.append("line")
+  // Draw vertical line
+  timeline.append("line")
     .attr("class", "track")
-    .attr("x1", x.range()[0])
-    .attr("x2", x.range()[1])
+    .attr("x1", 0)
+    .attr("x2", 0)
+    .attr("y1", y.range()[0])
+    .attr("y2", y.range()[1])
     .attr("stroke", colors.middle)
-    .attr("stroke-width", 8)
+    .attr("stroke-width", 3)
     .attr("stroke-linecap", "round");
 
-  // add a circle handle that can be dragged and updates selectedDecade
-  const handle = slider.append("circle")
-    .attr("class", "handle")
-    .attr("r", 10)
-    .attr("cx", x(selectedDecade))
-    .attr("fill", colors.middle)
-    .attr("stroke", colors.dark)
-    .attr("stroke-width", 2)
-    .call(d3.drag()
-      .on("drag", function(event) {
-        const [xPos] = d3.pointer(event, svg.node());
-        const decade = Math.round(x.invert(xPos) / 10) * 10;
-
-        if (decades.includes(decade)) {
-          if (decade === selectedDecade) return; // no change
-          selectedDecade = decade;
-          handle.attr("cx", x(selectedDecade));
-
-          const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-          displayData(dataToDisplay);
-        }
-      })
-    );
-
-  // add decade labels below the slider
-  slider.selectAll("text")
-    .data(decades)
-    .enter()
-    .append("text")
-      .attr("x", d => x(d))
-      .attr("y", 30)
-      .attr("text-anchor", "middle")
-      .text(d => d);
-
-  // add ticks to slider
-  slider.selectAll("line.tick")
+  // Add decade ticks and labels
+  timeline.selectAll("line.tick")
     .data(decades)
     .enter()
     .append("line")
-      .attr("class", "tick")
-      .attr("x1", d => x(d))
-      .attr("x2", d => x(d))
-      .attr("y1", -9)
-      .attr("y2", 9)
-      .attr("stroke", colors.middle)
-      .attr("stroke-width", 1);
+    .attr("class", "tick")
+    .attr("x1", -10)
+    .attr("x2", 10)
+    .attr("y1", d => y(d))
+    .attr("y2", d => y(d))
+    .attr("stroke", colors.middle)
+    .attr("stroke-width", 2);
+
+  timeline.selectAll("text.decade-label")
+    .data(decades)
+    .enter()
+    .append("text")
+    .attr("class", "decade-label")
+    .attr("x", 20)
+    .attr("y", d => y(d))
+    .attr("dy", "0.35em")
+    .attr("text-anchor", "start")
+    .style("font-size", "14px")
+    .text(d => d);
+
+  // Add postal context markers on the left
+  const postalContextData = Object.entries(postalContext).map(([decade, text]) => ({
+    decade: parseInt(decade),
+    text
+  }));
+
+  timeline.selectAll("circle.postal-marker")
+    .data(postalContextData)
+    .enter()
+    .append("circle")
+    .attr("class", "postal-marker")
+    .attr("cx", 0)
+    .attr("cy", d => y(d.decade))
+    .attr("r", 6)
+    .attr("fill", colors.dark)
+    .attr("stroke", colors.light)
+    .attr("stroke-width", 2);
+
+  timeline.selectAll("text.postal-context")
+    .data(postalContextData)
+    .enter()
+    .append("text")
+    .attr("class", "postal-context")
+    .attr("x", -20)
+    .attr("y", d => y(d.decade))
+    .attr("text-anchor", "end")
+    .style("font-size", "12px")
+    .each(function(d) {
+      const words = d.text.split(" ");
+      const lineHeight = 1.2;
+      const textElement = d3.select(this);
+      let line = [];
+      let lineNumber = 0;
+      const wordsPerLine = 3; // Wrap after 3 words
+      
+      // Align the text block to the top of the tick (no vertical centering offset)
+      words.forEach((word, i) => {
+        line.push(word);
+        
+        // Create new line after wordsPerLine words or on last word
+        if ((i + 1) % wordsPerLine === 0 || i === words.length - 1) {
+          textElement.append("tspan")
+            .attr("x", -20)
+            .attr("dy", lineNumber === 0 ? "0em" : `${lineHeight}em`)
+            .attr("text-anchor", "end")
+            .text(line.join(" "));
+          
+          line = [];
+          lineNumber++;
+        }
+      });
+    });
+
+  // Add current position indicator
+  const indicator = timeline.append("circle")
+    .attr("class", "position-indicator")
+    .attr("cx", 0)
+    .attr("cy", y(selectedDecade))
+    .attr("r", 8)
+    .attr("fill", colors.middle)
+    .attr("stroke", colors.dark)
+    .attr("stroke-width", 3);
+
+  // Make decade labels and ticks clickable
+  timeline.selectAll("text.decade-label")
+    .style("cursor", "pointer")
+    .on("click", function(event, d) {
+      selectedDecade = d;
+      indicator.transition()
+        .duration(150)
+        .attr("cy", y(selectedDecade));
+      
+      const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
+      displayData(dataToDisplay);
+    });
+
+  timeline.selectAll("line.tick")
+    .style("cursor", "pointer")
+    .on("click", function(event, d) {
+      selectedDecade = d;
+      indicator.transition()
+        .duration(150)
+        .attr("cy", y(selectedDecade));
+      
+      const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
+      displayData(dataToDisplay);
+    });
+
+  // Add click handler to postal context markers
+  timeline.selectAll("circle.postal-marker")
+    .style("cursor", "pointer")
+    .on("click", function(event, d) {
+      selectedDecade = d.decade;
+      indicator.transition()
+        .duration(150)
+        .attr("cy", y(selectedDecade));
+      
+      const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
+      displayData(dataToDisplay);
+    });
 }
 
 const drawBars = (data) => {
-  // build a d3 bar chart based off of data grouping by decade and theme
-  // one bar for each decade - theme pairing
-  // height of bar is number of stamps in that decade with that theme
-  const length = data.length;
+  // Display stamp thumbnails grouped by theme with labels on the left
+  const container = d3.select("#bars-container");
+  
+  // Create a wrapper for sticky positioning
+  const barsContent = container.append("div")
+    .attr("class", "bars-content");
+  
+  // Create a div for each theme group
+  data.forEach(themeData => {
+    const themeRow = barsContent.append("div")
+      .attr("class", "bar-container");
+    
+    // Left side: theme label and count
+    const labelContainer = themeRow.append("div")
+      .attr("class", "label")
+    
+    labelContainer.append("p")
+      .attr("class", "theme-title")
+      .text(themeData.theme);
+    
+    labelContainer.append("p")
+      .text(`(${themeData.count})`);
+    
+    // Right side: stamp thumbnails
+    const stampsContainer = themeRow.append("div")
+      .attr("class", "bar");
 
-  // set dimensions and margins for the chart
-  const margin = { top: 20, right: 30, bottom: 40, left: 125 },
-        width = window.innerWidth * 0.9 - margin.left - margin.right,
-        heightScale = length * 64,
-        maxCount = 90;
-
-  // append the svg object to the body of the page
-  const svg = d3.select("#bars-container")
-    .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", heightScale + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform",
-            `translate(${margin.left},${margin.top})`);
-
-  // X axis: scale and draw:
-  const x = d3.scaleLinear()
-    .domain([0, maxCount]) // number of stamps
-    .range([0, width]);
-
-  // Y axis: scale and draw:
-  const y = d3.scaleBand()
-    .range([0, heightScale])
-    .domain(data.map(d => d.theme))
-    .padding(0.25);
-
-  // X axis
-  svg.append("g")
-    .attr("transform", `translate(0,${heightScale})`)
-    .call(d3.axisBottom(x))
-    .style("display", "none");
-
-  // Y axis
-  svg.append("g")
-    .call(d3.axisLeft(y))
-    .style("display", "none");
-
-  // Bars
-  svg.selectAll("myRect")
-    .data(data)
-    .enter()
-    .append("rect")
-      .attr("x", x(0))
-      .attr("y", d => y(d.theme))
-      .attr("width", d => x(d.count))
-      .attr("height", y.bandwidth())
-      .attr("fill", colors.dark);
-
-  svg.selectAll("theme-label")
-    .data(data)
-    .enter()
-    .append("text")
-      .attr("x", -10)
-      .attr("y", d => y(d.theme) + y.bandwidth() / 2 + 5)
-      .attr("text-anchor", "end")
-      .attr("alignment-baseline", "middle")
-      .each(function(d) {
-        const words = d.theme.split(" ");
-        const n = words.length;
-        words.forEach((word, i) => {
-          d3.select(this)
-            .append("tspan")
-            .attr("x", -10)
-            .attr("dy", i === 0 ? `-${(n-1)/2}em` : "1.2em")
-            .text(word);
-        });
-      });
-
-  svg.selectAll("bar-label")
-    .data(data)
-    .enter()
-    .append("text")
-      .attr("x", d => x(d.count) + 5)
-      .attr("y", d => y(d.theme) + y.bandwidth() / 2)
-      .attr("alignment-baseline", "middle")
-      .text(d => d.count);
+    // TODO filter out images before when processing data
+    const stampsWithImages = themeData.stamps.filter(stamp => 
+      stamp.media && stamp.media.length > 0
+    );
+    
+    // Display stamp thumbnails
+    stampsWithImages.forEach(stamp => {
+      const imageUrl = stamp.media[0].thumbnail;
+      
+      stampsContainer.append("div")
+        .attr("class", "stamp-image-container-small")
+        .append("img")
+        .attr("class", "stamp-image-small")
+        .attr("src", imageUrl)
+        .attr("alt", stamp.title);
+    });
+  });
 }
 
 // when passed to here the data is already sorted by count descending and filtered by decade
@@ -407,7 +471,7 @@ const updateHeading = (data) => {
 
   // update the subheading with the selected decade and number of stamps
   const heading = document.querySelector(".chart-dates-results");
-  heading.innerHTML = `Themes of the ${selectedDecade}s <strong>(${stampsCount} stamps)</strong>`;
+  heading.innerHTML = `<strong>${selectedDecade}s / Themes</strong> (${stampsCount} stamps)`;
 
   const mainThemes = document.querySelector("#chart-main-themes");
   const seenBuckets = new Set();
@@ -450,6 +514,17 @@ const updateHeading = (data) => {
     const imageUrl = stampToDisplay.media[0].thumbnail;
     img.src = imageUrl;
     img.alt = stampToDisplay.title;
+
+    const swatches = document.querySelectorAll(".color-swatch");
+
+    Vibrant.from(imageUrl)
+      .getPalette()
+      .then((palette) => {
+        swatches[0].style.backgroundColor = palette.Vibrant.hex;
+        swatches[1].style.backgroundColor = palette.Muted.hex;
+        swatches[2].style.backgroundColor = palette.LightVibrant.hex;
+        swatches[3].style.backgroundColor = palette.LightMuted.hex;
+      });
 
     if (data[0].theme.toLowerCase().includes("postmark")) {
       imgContainer.classList.add("postmark-image-container");

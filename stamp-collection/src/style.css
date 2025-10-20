@@ -5,10 +5,10 @@
 }
 
 body {
-  font-family: "Overpass Mono", monospace;
-  margin: 2em 0;
-  background-color: var(--color-primary-light);
-  color: var(--color-primary-dark);
+  font-family: "Overpass Mono", monospace !important;
+  margin: 2em 0 !important;
+  background-color: var(--color-primary-light) !important;
+  color: var(--color-primary-dark) !important;
 }
 
 #app {
@@ -76,7 +76,6 @@ p a:hover {
 
 .align-left {
   text-align: left;
-  width: 28em;
 }
 
 .align-right {
@@ -86,6 +85,10 @@ p a:hover {
 .stamp-example-container {
   display: flex;
   align-items: flex-end;
+}
+
+#data .stamp-example-container {
+  align-items: flex-start;
 }
 
 .intro-text {
@@ -103,19 +106,65 @@ p a:hover {
   display: none;
 }
 
-#slider-container {
-  position: -webkit-sticky; /* Safari */
+#data .intro-heading {
   position: sticky;
   top: 0;
   background-color: var(--color-primary-light);
-  padding-top: 1em;
-  padding-bottom: 1em;
-  z-index: 1;
+  border-bottom: 1px solid var(--color-middle);
+  z-index: 10;
+  padding: 1em 0;
+  align-items: flex-start;
+}
+
+.attr-heading {
+  margin-top: 4em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.chart-dates-results {
+  margin-top: 4em;
+  margin-bottom: 0.5em;
+}
+
+.data-content-wrapper {
+  margin-top: 2em;
+  display: flex;
+  gap: 3em;
+  align-items: flex-start;
+  position: relative;
+  min-height: 100vh;
+}
+
+#slider-container {
+  flex-shrink: 0;
+  pointer-events: all; /* Enable pointer events for clicking */
+  align-self: flex-start;
+  position: relative;
+}
+
+#slider-container svg {
+  pointer-events: all;
+}
+
+#bars-container {
+  position: relative;
+  padding-bottom: 2em;
+}
+
+.bars-content {
+  background-color: var(--color-primary-light);
+  padding-bottom: 2em;
+}
+
+.bar-container {
+  display: flex;
+  margin-bottom: 2rem;
 }
 
 .stamp-image-container {
-  height: 10em;
-  width: 8em;
+  height: 15em;
+  width: 12em;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -137,7 +186,7 @@ p a:hover {
 }
 
 .stamp-thumbnail {
-  height: 10em;
+  height: 15em;
   width: auto;
 }
 
@@ -149,6 +198,47 @@ p a:hover {
   display: none;
 }
 
-#bars-container {
-  min-height: 400px;
+.label {
+  width: 150px;
+  padding-right: 2rem;
+  text-align: right;
+}
+
+.theme-title {
+  font-weight: bold;
+}
+
+.label p {
+  margin: 0;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1 1 0%;
+}
+
+.stamp-image-container-small {
+  height: 4em;
+  width: 3em;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stamp-image-small {
+  height: 4em;
+  width: auto;
+}
+
+.color-swatch {
+  height: 3em;
+  width: calc(50% - .5em);
+  margin: 0.5em 0.5em 0 0;
+}
+
+.colors-container {
+  display: flex;
+  flex-wrap: wrap;
 }
