@@ -162,8 +162,15 @@ p a:hover {
   margin-bottom: 2rem;
 }
 
+#stamp-highlight-title {
+  position: absolute;
+  bottom: 0.75em;
+  padding: 0.25em 0.5em;
+  display: none;
+}
+
 .stamp-image-container {
-  height: 15em;
+  height: 14em;
   width: 12em;
   overflow: hidden;
   display: flex;
@@ -234,7 +241,7 @@ p a:hover {
 
 .color-swatch {
   height: 3em;
-  width: calc(50% - .5em);
+  width: calc(50% - 0.5em);
   margin: 0.5em 0.5em 0 0;
 }
 
