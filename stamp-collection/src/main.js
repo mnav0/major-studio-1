@@ -3,6 +3,7 @@ import { themeBuckets, themeNormalization, themePriority } from "./constants/the
 import { colors } from "./constants/colors.js";
 import { historicalContext, postalContext } from "./constants/context.js";
 import { Vibrant } from "node-vibrant/browser";
+import { removeBackground } from '@imgly/background-removal';
 
 // state variables
 let selectedDecade = 1760;
@@ -98,26 +99,6 @@ const parseObject = (objectData) => {
   } else {
     theme = extractTheme(title);
   }
-
-
-  /** 
-  const thumbnail = objectData.content.descriptiveNonRepeating.online_media?.media[0]?.thumbnail;
-
-  const colors = []
-  // Using builder
-  Vibrant.from(thumbnail)
-    .getPalette()
-    .then((palette) => {
-      colors.push(palette.Vibrant.hex);
-      colors.push(palette.Muted.hex);
-      // colors.push(palette.DarkVibrant.hex);
-      colors.push(palette.LightVibrant.hex);
-      // colors.push(palette.DarkMuted.hex);
-      colors.push(palette.LightMuted.hex);
-    });
-  */
-
-
 
   if (decade && decade < 1900 && theme) {
     stampData.push({
@@ -449,7 +430,9 @@ const drawBars = (data) => {
     
     // Display stamp thumbnails
     stampsWithImages.forEach(stamp => {
-      const imageUrl = stamp.media[0].thumbnail;
+      const imgSizeParam = "max";
+      const imgSizeValue = 64;
+      const imageUrl = stamp.media[0].thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
       
       stampsContainer.append("div")
         .attr("class", "stamp-image-container-small")
@@ -461,8 +444,17 @@ const drawBars = (data) => {
   });
 }
 
+// Remove the background
+const removeImgBackground = async(imageUrl) => {
+  const newBlob = await removeBackground(imageUrl);
+  // Convert the blob to a URL to display the new image
+  const url = URL.createObjectURL(newBlob);
+
+  return url;
+}
+
 // when passed to here the data is already sorted by count descending and filtered by decade
-const updateHeading = (data) => {
+const updateHeading = async(data) => {
   // calculate total number of stamps in this decade
   let stampsCount = 0;
   data.forEach((d) => {
@@ -511,20 +503,33 @@ const updateHeading = (data) => {
   }
 
   if (stampToDisplay) {
-    const imageUrl = stampToDisplay.media[0].thumbnail;
-    img.src = imageUrl;
-    img.alt = stampToDisplay.title;
+    const imgSizeParam = "max";
+    const imgSizeValue = 224;
+    const imageUrl = stampToDisplay.media[0].thumbnail + `&${imgSizeParam}=${imgSizeValue}`
 
     const swatches = document.querySelectorAll(".color-swatch");
+    const titleTag = document.querySelector("#stamp-highlight-title");
 
     Vibrant.from(imageUrl)
       .getPalette()
       .then((palette) => {
+        imgContainer.style.backgroundColor = palette.LightVibrant.hex;
+        titleTag.innerHTML = stampToDisplay.title;
+        titleTag.style.display = "block";
+
+        imgContainer.style.border = `1px solid ${palette.DarkVibrant.hex}`;
         swatches[0].style.backgroundColor = palette.Vibrant.hex;
         swatches[1].style.backgroundColor = palette.Muted.hex;
         swatches[2].style.backgroundColor = palette.LightVibrant.hex;
         swatches[3].style.backgroundColor = palette.LightMuted.hex;
       });
+
+    
+    const imageUrlNoBg = await removeImgBackground(imageUrl);
+    imgContainer.style.backgroundColor = "inherit";
+    titleTag.style.display = "none";
+    img.src = imageUrlNoBg;
+    img.alt = stampToDisplay.title;
 
     if (data[0].theme.toLowerCase().includes("postmark")) {
       imgContainer.classList.add("postmark-image-container");
