@@ -3,6 +3,7 @@ import { themeBuckets, themeNormalization, themePriority } from "./constants/the
 import { colors } from "./constants/colors.js";
 import { historicalContext, postalContext } from "./constants/context.js";
 import { Vibrant } from "node-vibrant/browser";
+import { images, titles } from "./constants/images.js";
 
 // state variables
 let selectedDecade = 1760;
@@ -498,9 +499,9 @@ const updateHeading = (data) => {
     imgContainer.classList.add("horizontal-image-container");
   }
 
-  const stampToDisplayUrl = `./public/assets/stamp-featured-${selectedDecade}.png`;
+  const stampToDisplay = images[selectedDecade];
 
-  Vibrant.from(stampToDisplayUrl)
+  Vibrant.from(stampToDisplay)
     .getPalette()
     .then((palette) => {
       swatches[0].style.backgroundColor = palette.Vibrant.hex;
@@ -509,7 +510,8 @@ const updateHeading = (data) => {
       swatches[3].style.backgroundColor = palette.LightMuted.hex;
     });
 
-    img.src = stampToDisplayUrl;
+    img.src = stampToDisplay;
+    img.alt = titles[selectedDecade];
 }
 
 const displayData = (data) => {
