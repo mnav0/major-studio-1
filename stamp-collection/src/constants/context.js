@@ -5,7 +5,7 @@ export const historicalContext = {
   1800: "In the post-Revolutionary era, embossed postmarks show America's rebuilding and standardization of their independent postal system.",
   1840: "The U.S.’s first official stamp release in 1847 featured Revolutionary leaders as patriotic symbols to establish national identity.",
   1850: "Founding figures, patriotic imagery, and references to independence show how revolutionary principles were clung to amid growing tensions before the Civil War.",
-  1860: "During the Civil War, Union and Confederate states issued their own postage stamps, with Union stamps showing Revolutionary figures and patriotic symbols like the eagle, and Confederate issues showing state leaders.",
+  1860: "In 1860, the U. S. Post Office began to require stamps to be canceled to prohibit their reuse using a mark other than the town datestamp, leading to a variety of cancel marks that channeled the revolutionary spirit of the Civil War era.",
   1870: "In the post-Civil War Reconstruction era, stamps continue to feature Revolutionary figures alongside more recent military figures, allegorical symbols, and federal institutions as the nation rebuilds.",
   1880: "During the Gilded Age, America's rapid economic and industrial growth coincides with a continued depiction of Revolutionary figures, Civil War heroes, and patriotic symbols on stamps.",
   1890: "The 1893 Columbian Exposition for the 400th anniversary of Columbus's voyage is marked by an increase in stamps celebrating national pride through historical memory.",

@@ -67,8 +67,9 @@ const fetchAllData = (url) => {
 // add only the necessary data to our array
 const parseObject = (objectData) => { 
   let rawYearData;
-  if (objectData.content.indexedStructured.date) {
-    rawYearData = parseInt(objectData.content.indexedStructured.date[0].slice(0, 4));
+  const dates = objectData.content.indexedStructured.date;
+  if (dates) {
+    rawYearData = parseInt(dates[dates.length - 1].slice(0, 4));
   } else if (objectData.content.freetext.date) {
     const firstDateContent = objectData.content.freetext?.date[0].content;
     rawYearData = parseInt(firstDateContent.slice(-4));
@@ -99,10 +100,13 @@ const parseObject = (objectData) => {
     theme = extractTheme(title);
   }
 
-  if (decade && decade < 1900 && theme) {
+  const media = objectData.content.descriptiveNonRepeating.online_media?.media;
+  const thumbnail = media && media.length > 0 ? media[0].thumbnail : null;
+
+  if (decade && decade < 1900 && theme && thumbnail) {
     stampData.push({
       id: objectData.id,
-      media: objectData.content.descriptiveNonRepeating.online_media?.media,
+      thumbnail,
       decade,
       title,
       notes,
@@ -210,8 +214,7 @@ const getAndParseAllData = () => {
 
     drawTimeSlider(groupedData);
 
-    enterVisualization(groupedData);
-    // setupEntryButton(groupedData);
+    setupEntryButton(groupedData); 
   })
 }
 
@@ -431,17 +434,12 @@ const drawBars = (data) => {
     // Right side: stamp thumbnails
     const stampsContainer = themeRow.append("div")
       .attr("class", "bar");
-
-    // TODO filter out images before when processing data
-    const stampsWithImages = themeData.stamps.filter(stamp => 
-      stamp.media && stamp.media.length > 0
-    );
     
     // Display stamp thumbnails
-    stampsWithImages.forEach(stamp => {
+    themeData.stamps.forEach(stamp => {
       const imgSizeParam = "max";
-      const imgSizeValue = 128;
-      const imageUrl = stamp.media[0].thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+      const imgSizeValue = 200;
+      const imageUrl = stamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
       
       stampsContainer.append("div")
         .attr("class", "stamp-image-container-small")
@@ -455,6 +453,11 @@ const drawBars = (data) => {
 
 // when passed to here the data is already sorted by count descending and filtered by decade
 const updateHeading = (data) => {
+  const swatches = document.querySelectorAll(".color-swatch");
+  swatches.forEach(s => {
+    s.style.backgroundColor = "transparent";
+  });
+
   // calculate total number of stamps in this decade
   let stampsCount = 0;
   data.forEach((d) => {
@@ -484,47 +487,29 @@ const updateHeading = (data) => {
   const histContext = document.querySelector("#historical-context");
   histContext.innerHTML = historicalContext[selectedDecade];
 
-  // update the stamp highlight image to a random stamp from the top theme
-  const isEntryPoint = selectedDecade == 1760; 
+  // update the stamp highlight image to the featured stamp for the decade
   const imgContainer = document.querySelector("#stamp-highlight");
   const img = document.querySelector("#stamp-highlight-image");
   img.src = "";
   img.alt = "";
-  imgContainer.classList.remove("postmark-image-container");
+  imgContainer.classList.remove("horizontal-image-container");
 
-  let stampToDisplay;
-
-  if (isEntryPoint) {
-    stampToDisplay = data[0].stamps.find(s => s.id == "ld1-1643399842277-1643399842286-1");
-  } else {
-    // update the stamp highlight with a randomly selected stamp from the top theme
-    const topThemeStampsWithImages = data[0].stamps.filter(s => s.media && s.media.length > 0);
-    stampToDisplay = topThemeStampsWithImages[Math.floor(Math.random() * topThemeStampsWithImages.length)];
+  if (selectedDecade === 1890 || selectedDecade === 1780) {
+    imgContainer.classList.add("horizontal-image-container");
   }
 
-  if (stampToDisplay) {
-    const imgSizeParam = "max";
-    const imgSizeValue = 224;
-    const imageUrl = stampToDisplay.media[0].thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
-    img.src = imageUrl;
-    img.alt = stampToDisplay.title;
+  const stampToDisplayUrl = `./public/assets/stamp-featured-${selectedDecade}.png`;
 
-    const swatches = document.querySelectorAll(".color-swatch");
+  Vibrant.from(stampToDisplayUrl)
+    .getPalette()
+    .then((palette) => {
+      swatches[0].style.backgroundColor = palette.Vibrant.hex;
+      swatches[1].style.backgroundColor = palette.Muted.hex;
+      swatches[2].style.backgroundColor = palette.LightVibrant.hex;
+      swatches[3].style.backgroundColor = palette.LightMuted.hex;
+    });
 
-    Vibrant.from(imageUrl)
-      .getPalette()
-      .then((palette) => {
-        swatches[0].style.backgroundColor = palette.Vibrant.hex;
-        swatches[1].style.backgroundColor = palette.Muted.hex;
-        swatches[2].style.backgroundColor = palette.LightVibrant.hex;
-        swatches[3].style.backgroundColor = palette.LightMuted.hex;
-      });
-
-    if (data[0].theme.toLowerCase().includes("postmark")) {
-      imgContainer.classList.add("postmark-image-container");
-    }
-  }
-  
+    img.src = stampToDisplayUrl;
 }
 
 const displayData = (data) => {
