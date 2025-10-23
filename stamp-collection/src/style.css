@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --color-middle: #cbb28e;
   --color-primary-dark: #6b5347;
@@ -40,13 +42,14 @@ h2 {
   font-family: "Fraunces", serif;
   font-weight: 400;
   font-style: italic;
-  font-size: 3em;
+  font-size: 2em;
   margin: 0;
 }
 
 p {
   line-height: 1.3;
   margin: 0.25em 0;
+  font-size: 0.875em;
 }
 
 p a {
@@ -80,6 +83,8 @@ p a:hover {
 
 .align-right {
   text-align: right;
+  display: flex;
+  align-items: flex-end;
 }
 
 .stamp-example-container {
@@ -106,7 +111,7 @@ p a:hover {
   display: none;
 }
 
-#data .intro-heading {
+.data-heading {
   position: sticky;
   top: 0;
   background-color: var(--color-primary-light);
@@ -129,15 +134,13 @@ p a:hover {
 
 .data-content-wrapper {
   margin-top: 2em;
-  display: flex;
-  gap: 3em;
-  align-items: flex-start;
   position: relative;
   min-height: 100vh;
 }
 
 #slider-container {
   flex-shrink: 0;
+  width: 350px; /* Match SVG width to prevent cutoff */
   pointer-events: all; /* Enable pointer events for clicking */
   align-self: flex-start;
   position: relative;
@@ -152,14 +155,10 @@ p a:hover {
   padding-bottom: 2em;
 }
 
-.bars-content {
-  background-color: var(--color-primary-light);
-  padding-bottom: 2em;
-}
-
 .bar-container {
   display: flex;
   margin-bottom: 2rem;
+  margin-left: 1em;
 }
 
 .stamp-image-container {
@@ -175,18 +174,15 @@ p a:hover {
   height: 10em;
   width: 8em;
   overflow: hidden;
+  position: relative;
 }
 
 .first-stamp-thumbnail {
-  height: auto;
-  width: 17.5em;
-  position: relative;
-  top: -4.7em;
-  left: -0.7em;
+  position: absolute;
+  bottom: 0;
 }
 
 .stamp-thumbnail {
-  height: 15em;
   width: auto;
 }
 
@@ -199,8 +195,8 @@ p a:hover {
 }
 
 .label {
-  width: 150px;
-  padding-right: 2rem;
+  width: 125px;
+  padding-right: 1em;
   text-align: right;
 }
 
@@ -234,11 +230,23 @@ p a:hover {
 
 .color-swatch {
   height: 3em;
-  width: calc(50% - .5em);
+  width: calc(50% - 0.5em);
   margin: 0.5em 0.5em 0 0;
 }
 
 .colors-container {
   display: flex;
   flex-wrap: wrap;
+}
+
+/* Postal context text styling */
+.postal-context {
+  font-family: "Overpass Mono", monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  fill: var(--color-primary-dark);
+}
+
+.postal-context tspan {
+  font-weight: 400;
 }

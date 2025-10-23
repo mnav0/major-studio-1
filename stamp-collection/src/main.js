@@ -99,26 +99,6 @@ const parseObject = (objectData) => {
     theme = extractTheme(title);
   }
 
-
-  /** 
-  const thumbnail = objectData.content.descriptiveNonRepeating.online_media?.media[0]?.thumbnail;
-
-  const colors = []
-  // Using builder
-  Vibrant.from(thumbnail)
-    .getPalette()
-    .then((palette) => {
-      colors.push(palette.Vibrant.hex);
-      colors.push(palette.Muted.hex);
-      // colors.push(palette.DarkVibrant.hex);
-      colors.push(palette.LightVibrant.hex);
-      // colors.push(palette.DarkMuted.hex);
-      colors.push(palette.LightMuted.hex);
-    });
-  */
-
-
-
   if (decade && decade < 1900 && theme) {
     stampData.push({
       id: objectData.id,
@@ -230,7 +210,8 @@ const getAndParseAllData = () => {
 
     drawTimeSlider(groupedData);
 
-    setupEntryButton(groupedData);
+    enterVisualization(groupedData);
+    // setupEntryButton(groupedData);
   })
 }
 
@@ -258,9 +239,9 @@ const drawTimeSlider = (data) => {
   const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
 
   // Create vertical timeline structure
-  const margin = { top: 15, right: 0, bottom: 40, left: 200 };
-  const width = 300;
-  const height = 700;
+  const margin = { top: 12, right: 10, bottom: 50, left: 230 };
+  const width = 350; // Increased to 350px to accommodate text
+  const height = 750;
 
   const svg = d3.select("#slider-container")
     .append("svg")
@@ -335,32 +316,45 @@ const drawTimeSlider = (data) => {
     .enter()
     .append("text")
     .attr("class", "postal-context")
-    .attr("x", -20)
-    .attr("y", d => y(d.decade))
+    .attr("x", -25)
+    .attr("y", d => y(d.decade) + 5) // Position above the marker
     .attr("text-anchor", "end")
-    .style("font-size", "12px")
+    .style("font-size", "14px")
+    .style("line-height", "1.4")
+    .style("text-transform", "none") // Prevent CSS text-transform from affecting this
     .each(function(d) {
       const words = d.text.split(" ");
-      const lineHeight = 1.2;
+      const lineHeight = 1.3;
       const textElement = d3.select(this);
       let line = [];
       let lineNumber = 0;
-      const wordsPerLine = 3; // Wrap after 3 words
+      const maxCharsPerLine = 22; // Character-based wrapping for better control
       
-      // Align the text block to the top of the tick (no vertical centering offset)
       words.forEach((word, i) => {
-        line.push(word);
+        const testLine = line.length > 0 ? line.join(" ") + " " + word : word;
         
-        // Create new line after wordsPerLine words or on last word
-        if ((i + 1) % wordsPerLine === 0 || i === words.length - 1) {
+        // Check if adding this word would exceed the max length
+        if (testLine.length > maxCharsPerLine && line.length > 0) {
+          // Output current line before adding this word
           textElement.append("tspan")
-            .attr("x", -20)
+            .attr("x", -25)
             .attr("dy", lineNumber === 0 ? "0em" : `${lineHeight}em`)
             .attr("text-anchor", "end")
             .text(line.join(" "));
           
-          line = [];
+          line = [word]; // Start new line with current word
           lineNumber++;
+        } else {
+          line.push(word);
+        }
+        
+        // If this is the last word, output the remaining line
+        if (i === words.length - 1) {
+          textElement.append("tspan")
+            .attr("x", -25)
+            .attr("dy", lineNumber === 0 ? "0em" : `${lineHeight}em`)
+            .attr("text-anchor", "end")
+            .text(line.join(" "));
         }
       });
     });
@@ -418,13 +412,9 @@ const drawBars = (data) => {
   // Display stamp thumbnails grouped by theme with labels on the left
   const container = d3.select("#bars-container");
   
-  // Create a wrapper for sticky positioning
-  const barsContent = container.append("div")
-    .attr("class", "bars-content");
-  
   // Create a div for each theme group
   data.forEach(themeData => {
-    const themeRow = barsContent.append("div")
+    const themeRow = container.append("div")
       .attr("class", "bar-container");
     
     // Left side: theme label and count
@@ -449,7 +439,9 @@ const drawBars = (data) => {
     
     // Display stamp thumbnails
     stampsWithImages.forEach(stamp => {
-      const imageUrl = stamp.media[0].thumbnail;
+      const imgSizeParam = "max";
+      const imgSizeValue = 128;
+      const imageUrl = stamp.media[0].thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
       
       stampsContainer.append("div")
         .attr("class", "stamp-image-container-small")
@@ -511,7 +503,9 @@ const updateHeading = (data) => {
   }
 
   if (stampToDisplay) {
-    const imageUrl = stampToDisplay.media[0].thumbnail;
+    const imgSizeParam = "max";
+    const imgSizeValue = 224;
+    const imageUrl = stampToDisplay.media[0].thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
     img.src = imageUrl;
     img.alt = stampToDisplay.title;
 

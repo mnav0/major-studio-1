@@ -12,7 +12,11 @@
     "vite": "^7.1.7"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
+    "@tailwindcss/vite": "^4.1.15",
     "d3": "^7.9.0",
-    "node-vibrant": "^4.0.3"
+    "node-vibrant": "^4.0.3",
+    "onnxruntime-web": "^1.21.0",
+    "tailwindcss": "^4.1.15"
   }
 }

@@ -15,5 +15,5 @@ export const postalContext = {
   1760: "First stamp proof is created by the British to tax American colonies",
   1840: "First official stamp release in the U. S.",
   1860: "Confederate states create a separate postal system leading up to the Civil War",
-  1890: "First commemorative stamp release in the U. S."
+  1890: "America's first commemorative stamp release"
 }
