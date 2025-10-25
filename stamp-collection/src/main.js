@@ -216,6 +216,10 @@ const getAndParseAllData = () => {
     drawTimeSlider(groupedData);
 
     setupEntryButton(groupedData); 
+
+    // set title with the total number of stamps
+    const titleText = document.querySelector("#data-title-text");
+    titleText.innerHTML = `<strong>America’s Stamp Collection</strong> (${stampData.length} stamps)`;
   })
 }
 
@@ -332,7 +336,7 @@ const drawTimeSlider = (data) => {
       const textElement = d3.select(this);
       let line = [];
       let lineNumber = 0;
-      const maxCharsPerLine = 22; // Character-based wrapping for better control
+      const maxCharsPerLine = 23; // Character-based wrapping for better control
       
       words.forEach((word, i) => {
         const testLine = line.length > 0 ? line.join(" ") + " " + word : word;
