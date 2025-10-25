@@ -28,6 +28,7 @@ button {
   font-family: "Overpass Mono", monospace;
   fill: var(--color-primary-dark);
   text-transform: capitalize;
+  font-size: 0.875em;
 }
 
 h1 {
