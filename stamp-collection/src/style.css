@@ -111,24 +111,28 @@ p a:hover {
   display: none;
 }
 
+.data-title {
+  margin-bottom: 2em;
+}
+
 .data-heading {
   position: sticky;
   top: 0;
   background-color: var(--color-primary-light);
   border-bottom: 1px solid var(--color-middle);
   z-index: 10;
-  padding: 4em 0 2em 0;
+  padding: 2em 0;
   align-items: flex-start;
 }
 
 .attr-heading {
-  margin-top: 4em;
+  margin-top: 5em;
   font-weight: bold;
   margin-bottom: 0.5em;
 }
 
 .chart-dates-results {
-  margin-top: 4em;
+  margin-top: 5em;
   margin-bottom: 0.5em;
 }
 
@@ -186,7 +190,7 @@ p a:hover {
 }
 
 .horizontal-image-container {
-  margin-top: 1.5em;
+  margin-top: 2.4em;
 }
 
 #entry-button {
@@ -222,8 +226,20 @@ p a:hover {
   align-items: center;
 }
 
+.square-stamp {
+  width: 4em;
+}
+
+.horizontal-stamp {
+  width: 5em;
+}
+
+.tall-stamp {
+  width: 1.75em;
+}
+
 .stamp-image-small {
-  height: 4em;
+  height: 4.25em;
   width: auto;
   max-width: none;
 }

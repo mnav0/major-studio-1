@@ -1,154 +1,13 @@
 import * as d3 from "d3";
-import { themeBuckets, themeNormalization, themePriority } from "./constants/themes.js";
+import { themeBuckets } from "./constants/themes.js";
 import { colors } from "./constants/colors.js";
 import { historicalContext, postalContext } from "./constants/context.js";
 import { Vibrant } from "node-vibrant/browser";
-import { images, titles } from "./constants/images.js";
+import { images, titles, ids } from "./constants/images.js";
 
 // state variables
 let selectedDecade = 1760;
-let stampData = [];
 let groupedData = [];
-
-// search: fetches an array of terms based on term category
-const constructAndFetchQueries = (searchTerm) => {
-    // search base URL
-    const searchBaseURL = "https://api.si.edu/openaccess/api/v1.0/search"; 
-
-    // API key
-    const apiKey = import.meta.env.VITE_SI_API_KEY;
-
-    let url = searchBaseURL + "?api_key=" + apiKey + "&q=" + searchTerm;
-
-    return window
-      .fetch(url)
-      .then(res => res.json())
-      .then(data => {
-
-        // constructing search queries to get all the rows of data
-        let pageSize = 1000;
-        let numberOfQueries = Math.ceil(data.response.rowCount / pageSize);
-        const fetchAllPromises = [];
-        let searchAllURL = "";
-
-        for(let i = 0; i < numberOfQueries; i++) {
-          // making sure that our last query calls for the exact number of rows
-          if (i == (numberOfQueries - 1)) {
-            searchAllURL = url + `&start=${i * pageSize}&rows=${data.response.rowCount - (i * pageSize)}`;
-          } else {
-            searchAllURL = url + `&start=${i * pageSize}&rows=${pageSize}`;
-          }
-
-          fetchAllPromises.push(fetchAllData(searchAllURL));
-        }
-
-        return Promise.all(fetchAllPromises);
-      })
-      .catch(error => {
-        console.log(error);
-      })
-  }
-
-// fetching all the data listed under our search and pushing them all into our custom array
-const fetchAllData = (url) => {
-  return window
-    .fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      data.response.rows.forEach(function(n) {
-        parseObject(n);
-      });
-    })
-    .catch(error => {
-      console.log(error)
-    })
-
-}
-
-// add only the necessary data to our array
-const parseObject = (objectData) => { 
-  let rawYearData;
-  const dates = objectData.content.indexedStructured.date;
-  if (dates) {
-    rawYearData = parseInt(dates[dates.length - 1].slice(0, 4));
-  } else if (objectData.content.freetext.date) {
-    const firstDateContent = objectData.content.freetext?.date[0].content;
-    rawYearData = parseInt(firstDateContent.slice(-4));
-  }
-
-  const decade = Math.floor(rawYearData / 10) * 10;
-
-  let currentPlace = "";
-  if (objectData.content.indexedStructured.place) {
-    currentPlace = objectData.content.indexedStructured.place[0];
-  }
-
-  const isUSTopic = objectData.content.indexedStructured.topic?.includes("U.S. Stamps");
-  const isUSPlace = currentPlace.toLowerCase().includes("united states");
-  if (!(isUSTopic || isUSPlace)) return;
-
-  const notes = objectData.content.freetext.notes?.[0].content || "";
-  const title = objectData.title || "";
-
-  let theme;
-
-  // Manual overrides for early decades
-  if (decade <= 1800) {
-    if (decade === 1760) theme = "British Crown";
-    else if (decade === 1780) theme = "Manual postmark";
-    else theme = "Embossed postmark";
-  } else {
-    theme = extractTheme(title);
-  }
-
-  const media = objectData.content.descriptiveNonRepeating.online_media?.media;
-  const thumbnail = media && media.length > 0 ? media[0].thumbnail : null;
-
-  if (decade && decade < 1900 && theme && thumbnail) {
-    stampData.push({
-      id: objectData.id,
-      thumbnail,
-      decade,
-      title,
-      notes,
-      theme // single string
-    });
-  }
-};
-
-// Build regex from all keys/values
-const themesRegex = new RegExp(
-  "\\b(" +
-    [...new Set([
-      ...Object.keys(themeNormalization),
-      ...Object.values(themeNormalization),
-      ...themePriority
-    ])].join("|") +
-  ")\\b",
-  "gi"
-);
-
-function extractTheme(text) {
-  if (!text) return null;
-
-  const matches = text.match(themesRegex);
-  if (!matches) return null;
-
-  // Normalize variants
-  const normalized = [...new Set(matches.map(m => {
-    const raw = m.toLowerCase();
-    return themeNormalization[raw] || m;
-  }))];
-
-  // Pick highest priority theme
-  for (const theme of themePriority) {
-    if (normalized.some(n => n.toLowerCase() === theme.toLowerCase())) {
-      return theme;
-    }
-  }
-
-  return null;
-}
 
 function findBucketForTheme(theme) {
   for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
@@ -190,37 +49,62 @@ function flattenGroupedData(groupedData) {
   return rows;
 }
 
-const getAndParseAllData = () => {
-  // constructing the initial search query to get all stamps
-  const allStampsSearch = `unit_code:"NPM" AND object_type:"Postage stamps"`;
+function distToStamp(A, B, stampEmbedding) {
+  const embeddingA = A.embedding;
+  const embeddingB = B.embedding;
+  let diffSumA = 0
+  let diffSumB = 0
 
-  // outliers to fetch the initial stamps from the 1780s
-  const processingStampsSearch = `stamp AND unit_code:"NPM" AND date:"1780s"`;
+  for (let idx = 0; idx < stampEmbedding.length; idx++) {
+    diffSumA += (embeddingA[idx] - stampEmbedding[idx]) ** 2;
+    diffSumB += (embeddingB[idx] - stampEmbedding[idx]) ** 2;
+  }
 
-  // outliers to fetch the embossed stamps from the early 1800s
-  const embossedStampsSearch = `unit_code:"NPM" AND object_type:"Tax stamps" AND date:"1800s"`;
+  return diffSumA - diffSumB;
+}
 
-  const searches = [ allStampsSearch, processingStampsSearch, embossedStampsSearch ];
-
-  // create an array of promises for each search
-  const searchPromises = searches.map((search) => 
-    constructAndFetchQueries(search)
-  )
-
+const fetchStampData = () => {
   // when all the searches are done, sort the data and display the images
-  Promise.all(searchPromises).then((result) => {
-    // group data by decade and theme
-    const grouped = groupByDecadeAndTheme(stampData);
-    groupedData = flattenGroupedData(grouped);
+  fetch("./src/data/stamps.json").then((res) => res.json()).then((stamps) => {
 
-    drawTimeSlider(groupedData);
+    fetchEmbeddingsData().then((embeddings) => {
+      stamps.forEach((stamp) => {
+        stamp.embedding = embeddings.find(e => e.id === stamp.id)?.embedding || null;
+      });
+    }).then(() => {
+      // group data by decade and theme
+      const grouped = groupByDecadeAndTheme(stamps);
+      groupedData = flattenGroupedData(grouped);
 
-    setupEntryButton(groupedData); 
+      // sort stamps within their decade and theme by their distance from the featured image id
+      groupedData.forEach(group => {
+        group.stamps.sort((a, b) => {
+          if (a.embedding && b.embedding) {
+            const featuredStamp = stamps.find(s => s.id === ids[group.decade]);
+            let featuredEmbedding = featuredStamp.embedding;
+            if (!featuredEmbedding) {
+              featuredEmbedding = stamps[0].embedding; // fallback to first stamp embedding
+            }
+            return distToStamp(a, b, featuredEmbedding);
+          } else {
+            return 0;
+          }
+        });
+      });
 
-    // set title with the total number of stamps
-    const titleText = document.querySelector("#data-title-text");
-    titleText.innerHTML = `<strong>America’s Stamp Collection</strong> (${stampData.length} stamps)`;
+      drawTimeSlider(groupedData);
+
+      setupEntryButton(groupedData);
+
+      // set title with the total number of stamps
+      const titleText = document.querySelector("#data-title-text");
+      titleText.innerHTML = `<strong>America’s Stamp Collection</strong> (${stamps.length} stamps)`;
+    })
   })
+}
+
+const fetchEmbeddingsData = () => {
+  return fetch("./src/data/embeddings.json").then((res) => res.json()).then((embeddings) => embeddings);
 }
 
 const setupEntryButton = (data) => {
@@ -445,13 +329,30 @@ const drawBars = (data) => {
       const imgSizeParam = "max";
       const imgSizeValue = 200;
       const imageUrl = stamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+
+      const aspectRatio = stamp.media[0].resources?.[0]?.width / stamp.media[0].resources?.[0]?.height;
+      const isSquare = aspectRatio >= 0.95 && aspectRatio <= 1.05;
+      const isHorizontal = aspectRatio > 1.05 || selectedDecade === 1780;
+      const isTall = aspectRatio < 0.6;
       
       stampsContainer.append("div")
-        .attr("class", "stamp-image-container-small")
+        .attr("class", () => {
+          const baseClass = "stamp-image-container-small";
+          let finalClass = baseClass;
+          if (isSquare) {
+            finalClass += " square-stamp";
+          } else if (isTall) {
+            finalClass += " tall-stamp";
+          } else if (isHorizontal) { 
+            finalClass += " horizontal-stamp";
+          }
+          return finalClass;
+        })
         .append("img")
         .attr("class", "stamp-image-small")
         .attr("src", imageUrl)
         .attr("alt", stamp.title);
+        
     });
   });
 }
@@ -531,4 +432,4 @@ const displayData = (data) => {
   updateHeading(data);
 }
 
-getAndParseAllData();
+fetchStampData();
