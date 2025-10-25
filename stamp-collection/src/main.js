@@ -117,20 +117,33 @@ const enterVisualization = (data) => {
 }
 
 const drawTimeSlider = (data) => {
+  // slider layout constants
+  const SLIDER_MIN_HEIGHT = 260;
+  const SLIDER_MAX_HEIGHT = 1200;
+  const SLIDER_TOP_OFFSET = 72;
+
   const sliderSection = document.querySelector("#slider-container");
   sliderSection.style.display = "block";
-
   const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
+
+  // compute available height for slider SVG based on viewport and a fixed top offset
+  const viewportHeight = window.innerHeight - 320;
+  // subtract a small bottom margin so the slider isn't flush to the bottom of the viewport
+  const availableHeight = Math.max(SLIDER_MIN_HEIGHT, Math.min(SLIDER_MAX_HEIGHT, viewportHeight - SLIDER_TOP_OFFSET));
+
+  // remove previous svg if present (helps when resizing)
+  d3.select("#slider-container svg").remove();
 
   // Create vertical timeline structure
   const margin = { top: 12, right: 10, bottom: 50, left: 230 };
-  const width = 350; // Increased to 350px to accommodate text
-  const height = 750;
+  const width = 300; // Match CSS width
+  const height = availableHeight;
 
   const svg = d3.select("#slider-container")
     .append("svg")
     .attr("width", width)
-    .attr("height", height);
+    .attr("height", height)
+    .style("display", "block");
 
   // Create vertical scale
   const y = d3.scaleLinear()
@@ -425,3 +438,9 @@ const displayData = (data) => {
 }
 
 fetchStampData();
+// redraw the slider on resize so the SVG height matches the new viewport
+window.addEventListener('resize', () => {
+  if (groupedData && groupedData.length) {
+    drawTimeSlider(groupedData);
+  }
+});

@@ -116,11 +116,12 @@ p a:hover {
 }
 
 .data-heading {
+  height: 320px;
   position: sticky;
   top: 0;
   background-color: var(--color-primary-light);
   border-bottom: 1px solid var(--color-middle);
-  z-index: 10;
+  z-index: 100;
   padding: 2em 0;
   align-items: flex-start;
 }
@@ -143,10 +144,26 @@ p a:hover {
 
 #slider-container {
   flex-shrink: 0;
-  width: 350px; /* Match SVG width to prevent cutoff */
-  pointer-events: all; /* Enable pointer events for clicking */
+  width: 300px; 
+  pointer-events: all; 
   align-self: flex-start;
-  position: relative;
+  position: sticky;
+  top: 340px;
+  max-height: calc(100vh - 340px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  z-index: 10;
+  min-height: 260px; /* ensure slider never collapses too small and causes overlap */
+}
+
+@media (max-width: 900px) {
+  #slider-container {
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 #slider-container svg {
@@ -171,6 +188,7 @@ p a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-left: 1.5em;
 }
 
 .first-stamp-image-container {
@@ -190,7 +208,8 @@ p a:hover {
 }
 
 .horizontal-image-container {
-  margin-top: 2.4em;
+  margin-top: 4.5em;
+  height: 10.5em;
 }
 
 #entry-button {
@@ -245,14 +264,23 @@ p a:hover {
 }
 
 .color-swatch {
-  height: 3em;
-  width: calc(50% - 0.5em);
-  margin: 0.25em 0.5em 0.25em 0;
+  height: 3.6em;
+  width: 3em;
+  margin: 0.125em 0.25em 0.125em 0;
+
+  @media (max-width: 1100px) {
+    height: 1.9em;
+  }
 }
 
 .colors-container {
   display: flex;
   flex-wrap: wrap;
+  width: 6.5em;
+
+  @media (max-width: 1100px) {
+    width: 100%;
+  }
 }
 
 .postal-context {
