@@ -4,6 +4,8 @@ import { colors } from "./constants/colors.js";
 import { historicalContext, postalContext } from "./constants/context.js";
 import { Vibrant } from "node-vibrant/browser";
 import { images, titles, ids } from "./constants/images.js";
+import stampsJSON from "./data/stamps.json" assert { type: "json" };
+import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
 
 // state variables
 let selectedDecade = 1760;
@@ -64,47 +66,37 @@ function distToStamp(A, B, stampEmbedding) {
 }
 
 const fetchStampData = () => {
-  // when all the searches are done, sort the data and display the images
-  fetch("./src/data/stamps.json").then((res) => res.json()).then((stamps) => {
-
-    fetchEmbeddingsData().then((embeddings) => {
-      stamps.forEach((stamp) => {
-        stamp.embedding = embeddings.find(e => e.id === stamp.id)?.embedding || null;
-      });
-    }).then(() => {
-      // group data by decade and theme
-      const grouped = groupByDecadeAndTheme(stamps);
-      groupedData = flattenGroupedData(grouped);
-
-      // sort stamps within their decade and theme by their distance from the featured image id
-      groupedData.forEach(group => {
-        group.stamps.sort((a, b) => {
-          if (a.embedding && b.embedding) {
-            const featuredStamp = stamps.find(s => s.id === ids[group.decade]);
-            let featuredEmbedding = featuredStamp.embedding;
-            if (!featuredEmbedding) {
-              featuredEmbedding = stamps[0].embedding; // fallback to first stamp embedding
-            }
-            return distToStamp(a, b, featuredEmbedding);
-          } else {
-            return 0;
-          }
-        });
-      });
-
-      drawTimeSlider(groupedData);
-
-      setupEntryButton(groupedData);
-
-      // set title with the total number of stamps
-      const titleText = document.querySelector("#data-title-text");
-      titleText.innerHTML = `<strong>America’s Stamp Collection</strong> (${stamps.length} stamps)`;
-    })
+  stampsJSON.forEach((stamp) => {
+    stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
   })
-}
+  
+  // group data by decade and theme
+  const grouped = groupByDecadeAndTheme(stampsJSON);
+  groupedData = flattenGroupedData(grouped);
 
-const fetchEmbeddingsData = () => {
-  return fetch("./src/data/embeddings.json").then((res) => res.json()).then((embeddings) => embeddings);
+  // sort stamps within their decade and theme by their distance from the featured image id
+  groupedData.forEach(group => {
+    group.stamps.sort((a, b) => {
+      if (a.embedding && b.embedding) {
+        const featuredStamp = stampsJSON.find(s => s.id === ids[group.decade]);
+        let featuredEmbedding = featuredStamp.embedding;
+        if (!featuredEmbedding) {
+          featuredEmbedding = stamps[0].embedding; // fallback to first stamp embedding
+        }
+        return distToStamp(a, b, featuredEmbedding);
+      } else {
+        return 0;
+      }
+    });
+  });
+
+  drawTimeSlider(groupedData);
+
+  setupEntryButton(groupedData);
+
+  // set title with the total number of stamps
+  const titleText = document.querySelector("#data-title-text");
+  titleText.innerHTML = `<strong>America’s Stamp Collection</strong> (${stampsJSON.length} stamps)`;
 }
 
 const setupEntryButton = (data) => {
