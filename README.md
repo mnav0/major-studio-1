@@ -1,28 +1,8 @@
-# major-studio-1
+# America's Stamp Collection
+_Maggie Navracruz_
 
-**Stamp Collection**
+The Stamp Act of 1765 was imposed by the British King and Parliament as an attempt to declare full power over the American colonies, forcing them to pay the British government for all postage of letters and newspapers using government-purchased stamps. Tensions grew strongly in response to this taxation, ultimately leading to the colonies rejecting British control and rebelling, sparking the American Revolution. 
 
-_Qualitative_
+In American colonists' public resistance of this legislature, stamps and their usage became an early symbol of resistance, revolutionary spirit, and independence. This project explores how we can to trace a path through history using the Smithsonian National Postal Museum's collection of stamps and letters - from the first stamp in 1765 to where they begin to live more permanently in America's modern day postal system and culture.
 
-<img width="1727" height="971" alt="Screenshot 2025-10-25 at 5 28 04 PM" src="https://github.com/user-attachments/assets/cf497652-1605-478c-b4dd-e558116d719a" />
-
-
-<img width="1727" height="973" alt="Screenshot 2025-10-25 at 5 28 17 PM" src="https://github.com/user-attachments/assets/8fd84b08-3766-411f-9280-d3d3707579b3" />
-
-
-<img width="1727" height="969" alt="Screenshot 2025-10-25 at 5 28 55 PM" src="https://github.com/user-attachments/assets/ccf61042-9992-491b-bcb3-d57d1bd72d02" />
-
-
-<img width="1725" height="971" alt="Screenshot 2025-10-25 at 5 29 14 PM" src="https://github.com/user-attachments/assets/f69c9b3b-3ede-4a5a-9a86-20d222ee3698" />
-
-
-
-_Quantitative_
-
-<img width="1337" height="801" alt="Screenshot 2025-09-29 at 9 11 11 PM" src="https://github.com/user-attachments/assets/a71bc884-03e7-47d4-9946-d3b6b63e320c" />
-
-
-<img width="1337" height="798" alt="Screenshot 2025-09-29 at 9 10 52 PM" src="https://github.com/user-attachments/assets/0c81b4fa-3ffd-49ef-84a7-ba69fabceaba" />
-
-
-<img width="1334" height="798" alt="Screenshot 2025-09-29 at 9 10 42 PM" src="https://github.com/user-attachments/assets/97b2bec3-ac88-4ea0-8b97-4196bc1f6d52" />
+<img width="1311" height="774" alt="Screenshot 2025-10-28 at 3 30 41 PM" src="https://github.com/user-attachments/assets/649a2880-6f41-4646-a0ec-81a36d824df6" />
