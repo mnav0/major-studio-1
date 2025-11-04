@@ -337,7 +337,10 @@ const drawBars = (data) => {
 
       const aspectRatio = stamp.media[0].resources?.[0]?.width / stamp.media[0].resources?.[0]?.height;
       const isSquare = aspectRatio >= 0.95 && aspectRatio <= 1.05;
-      const isHorizontal = aspectRatio > 1.05 || selectedDecade === 1780;
+      const isHorizontal = (aspectRatio > 1.05 && aspectRatio < 1.3)|| selectedDecade === 1780;
+      const isWideStamp = aspectRatio > 1.3 && aspectRatio <= 1.5;
+      const isExtraWideStamp = aspectRatio > 1.5 && aspectRatio <= 1.8;
+      const isWidestStamp = aspectRatio > 1.8;
       const isTall = aspectRatio < 0.6;
       
       stampsContainer.append("div")
@@ -348,7 +351,13 @@ const drawBars = (data) => {
             finalClass += " square-stamp";
           } else if (isTall) {
             finalClass += " tall-stamp";
-          } else if (isHorizontal) { 
+          } else if (isWidestStamp) {
+            finalClass += " widest-stamp";
+          } else if (isExtraWideStamp) {
+            finalClass += " extra-wide-stamp";
+          } else if (isWideStamp) {
+            finalClass += " wide-stamp";
+          } else if (isHorizontal) {
             finalClass += " horizontal-stamp";
           }
           return finalClass;

@@ -145,8 +145,8 @@ p a:hover {
 
 #slider-container {
   flex-shrink: 0;
-  width: 300px; 
-  pointer-events: all; 
+  width: 300px;
+  pointer-events: all;
   align-self: flex-start;
   position: sticky;
   top: 340px;
@@ -257,6 +257,19 @@ p a:hover {
 .tall-stamp {
   width: 1.75em;
 }
+
+.wide-stamp {
+  width: 5.5em;
+}
+
+.extra-wide-stamp {
+  width: 6.5em;
+}
+
+.widest-stamp {
+  width: 8em;
+}
+
 
 .stamp-image-small {
   height: 4.25em;
