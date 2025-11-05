@@ -2,10 +2,10 @@ import * as d3 from "d3";
 import { themeBuckets } from "./constants/themes.js";
 import { colors } from "./constants/colors.js";
 import { historicalContext, postalContext } from "./constants/context.js";
-import { Vibrant } from "node-vibrant/browser";
 import { images, titles, ids } from "./constants/images.js";
 import stampsJSON from "./data/stamps.json" assert { type: "json" };
 import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
+import colorsJSON from "./data/decade-colors.json" assert { type: "json" };
 
 // state variables
 let selectedDecade = 1760;
@@ -68,11 +68,17 @@ function distToStamp(A, B, stampEmbedding) {
 const fetchStampData = () => {
   stampsJSON.forEach((stamp) => {
     stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
-  })
+  });
   
   // group data by decade and theme
   const grouped = groupByDecadeAndTheme(stampsJSON);
   groupedData = flattenGroupedData(grouped);
+  
+  // fetch colors from json and add to object to look up by decade
+  groupedData.forEach(group => {
+    const colors = colorsJSON[group.decade];
+    group.colors = colors;
+  });
 
   // sort stamps within their decade and theme by their distance from the featured image id
   groupedData.forEach(group => {
@@ -382,7 +388,7 @@ const updateHeading = (data) => {
   let stampsCount = 0;
   data.forEach((d) => {
     stampsCount += d.count;
-  })
+  });
 
   // update the subheading with the selected decade and number of stamps
   const heading = document.querySelector(".chart-dates-results");
@@ -420,17 +426,16 @@ const updateHeading = (data) => {
 
   const stampToDisplay = images[selectedDecade];
 
-  Vibrant.from(stampToDisplay)
-    .getPalette()
-    .then((palette) => {
-      swatches[0].style.backgroundColor = palette.Vibrant.hex;
-      swatches[1].style.backgroundColor = palette.Muted.hex;
-      swatches[2].style.backgroundColor = palette.LightVibrant.hex;
-      swatches[3].style.backgroundColor = palette.LightMuted.hex;
-    });
+  // update color swatches for this selected decade
+  swatches.forEach((s, idx) => {
+    const decadeColors = data[0]?.colors || [];
+    if (decadeColors[idx + 1]) {
+      s.style.backgroundColor = decadeColors[idx + 1];
+    }
+  });
 
-    img.src = stampToDisplay;
-    img.alt = titles[selectedDecade];
+  img.src = stampToDisplay;
+  img.alt = titles[selectedDecade];
 }
 
 const displayData = (data) => {
