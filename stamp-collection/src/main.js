@@ -102,7 +102,10 @@ const fetchStampData = () => {
 
   // set title with the total number of stamps
   const titleText = document.querySelector("#data-title-text");
-  titleText.innerHTML = `<strong>America’s Stamp Collection</strong> (${stampsJSON.length} stamps)`;
+  titleText.innerHTML = `<strong>America’s Stamp Collection / 1765-1894</strong> (${stampsJSON.length} stamps)`;
+  titleText.onclick = () => {
+    enterHomepage();
+  }
 }
 
 const setupEntryButton = (data) => {
@@ -120,6 +123,14 @@ const enterVisualization = (data) => {
 
   const dataToDisplay = data.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
   displayData(dataToDisplay);
+}
+
+const enterHomepage = () => {
+  const introSection = document.querySelector("#intro-section");
+  introSection.style.display = "block";
+
+  const dataSection = document.querySelector("#data");
+  dataSection.style.display = "none";
 }
 
 const drawTimeSlider = (data) => {
