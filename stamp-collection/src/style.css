@@ -116,14 +116,45 @@ p a:hover {
   margin-bottom: 2em;
 }
 
+.top-heading-container {
+  padding: 1em 0;
+}
+
+.about-heading {
+  font-weight: bold;
+  margin-top: 2em;
+}
+
+#about-text {
+  margin-bottom: 2em;
+}
+
+.col-heading {
+  cursor: pointer;
+}
+
+.expanded-heading {
+  border-top: 1px solid var(--color-middle);
+  padding: 0 122px;
+  visibility: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.open-expanded-heading {
+  opacity: 1;
+  visibility: visible;
+  max-height: 500px;
+  transition: max-height 0.2s ease-in-out;
+}
+
 .data-heading {
-  height: 375px;
   position: sticky;
   top: 0;
   background-color: var(--color-primary-light);
   border-bottom: 1px solid var(--color-middle);
   z-index: 100;
-  padding: 2em 0;
+  padding: 1em 0 0 0;
   align-items: flex-start;
 }
 
@@ -131,6 +162,18 @@ p a:hover {
   margin-top: 0;
   font-weight: bold;
   margin-bottom: 0.5em;
+  display: inline-block;
+}
+
+.carrot {
+  display: inline-block;
+  transform: none;
+  transition: transform 0.1s ease-in-out;
+}
+
+.rotated {
+  transform: rotate(-180deg);
+  transition: transform 0.1s ease-in-out;
 }
 
 .chart-dates-results {
@@ -149,22 +192,11 @@ p a:hover {
   pointer-events: all;
   align-self: flex-start;
   position: sticky;
-  top: 340px;
-  max-height: calc(100vh - 340px);
+  top: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   z-index: 10;
-  min-height: 260px; /* ensure slider never collapses too small and causes overlap */
-}
-
-@media (max-width: 900px) {
-  #slider-container {
-    position: static;
-    top: auto;
-    max-height: none;
-    overflow: visible;
-  }
 }
 
 #slider-container svg {
@@ -188,10 +220,6 @@ p a:hover {
   display: flex;
   justify-content: flex-end;
   align-items: flex-start;
-
-  @media screen and (max-width: 1350px) {
-    height: auto;
-  }
 }
 
 .first-stamp-image-container {
@@ -208,11 +236,11 @@ p a:hover {
 
 .stamp-thumbnail {
   height: 100%;
-}
 
-/* .tall-stamp-thumbnail {
-  max-height: 19.5em;
-} */
+  @media screen and (max-width: 1400px) {
+    height: auto;
+  }
+}
 
 .horizontal-stamp-thumbnail {
   margin-top: 1.75em;
@@ -327,7 +355,8 @@ p a:hover {
   width: 100%;
 }
 
-#color-swatch-2, #color-swatch-4 {
+#color-swatch-2,
+#color-swatch-4 {
   width: 60%;
 }
 

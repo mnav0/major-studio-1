@@ -8,6 +8,7 @@ import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
 import colorsJSON from "./data/decade-colors.json" assert { type: "json" };
 import { getAndParseAllData } from "./fetch-data.js";
 import contextRegex from "./constants/text.js";
+import { processInfo } from "./constants/process-info.js";
 
 // state variables
 let selectedDecade = 1760;
@@ -21,7 +22,11 @@ let state = {
   historicalContext: historicalContext[selectedDecade],
   materials: [],
   colors: [],
-  featuredStamp: images[selectedDecade]
+  featuredStamp: images[selectedDecade],
+  aboutSection: {
+    isOpen: false,
+    colIndex: null
+  }
 }
 
 function findBucketForTheme(theme) {
@@ -445,7 +450,6 @@ const updateColors = (data) => {
 
 const updateFeaturedImg = (data) => {
   // update the stamp highlight image to the featured stamp for the decade
-  const imgContainer = document.querySelector("#stamp-highlight");
   const img = document.querySelector("#stamp-highlight-image");
   img.src = "";
   img.alt = "";
@@ -484,6 +488,52 @@ const updateHeading = (data) => {
   updateFeaturedImg(data);
 }
 
+const toggleAboutInfo = (n) => {
+  const aboutSection = document.querySelector("#expanded-heading");
+  const text = aboutSection.querySelector("#about-text");
+
+  const selectedSection = document.querySelector(`#col-heading-${n}`);
+  const carrot = selectedSection.querySelector(".carrot");
+
+  const allCarrots = document.querySelectorAll(".carrot");
+
+  if (state.aboutSection.isOpen && state.aboutSection.colIndex === n) {
+    aboutSection.classList.remove("open-expanded-heading");
+
+    carrot?.classList.remove("rotated");
+
+    state.aboutSection.isOpen = false;
+    state.aboutSection.colIndex = null;
+    return;
+  }
+
+  text.innerHTML = processInfo[n];
+  state.aboutSection.colIndex = n;
+
+  allCarrots.forEach((carrot) => {
+    debugger;
+    if (carrot.classList.contains("rotated")) {
+      carrot.classList.remove("rotated");
+    } else if (carrot.parentElement.id === `col-heading-${n}`) {
+      carrot.classList.add("rotated");
+    }
+  });
+
+  if (!state.aboutSection.isOpen) {
+    aboutSection.classList.add("open-expanded-heading");
+
+    state.aboutSection.isOpen = true;
+  }
+}
+
+const setupHeadingDropdowns = () => {
+  const clickableHeadings = document.querySelectorAll(".col-heading");
+
+  clickableHeadings.forEach((heading, index) => {
+    heading.onclick = () => toggleAboutInfo(index);
+  })
+}
+
 const displayData = (data) => {
   // make sure data section is visible
   const dataSection = document.querySelector("#data");
@@ -493,8 +543,9 @@ const displayData = (data) => {
   const barsContainer = document.querySelector("#bars-container");
   barsContainer.innerHTML = "";
   
+  setupHeadingDropdowns();
   drawBars(data);
   updateHeading(data);
 };
 
-fetchStampDataForDev();
+fetchStampData();

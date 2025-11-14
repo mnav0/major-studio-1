@@ -1,0 +1,8 @@
+export const processInfo = [
+  "Decade is extracted from the earliest date available for each artifact. Scroll or click to travel through decades.",
+  "Themes are extracted from the category labels below (George Washington, Benjamin Franklin, etc.). Category labels are based on the artifact’s title. The two themes that have the highest frequency of stamps are shown above.",
+  "Historical context is synthesized using trends in the artifacts' metadata (description, title) and research from sources like <a href=\"https://about.usps.com/who/profile/history/significant-dates.htm\" target=\"_blank\">USPS Postal History</a>.",
+  "Materials are based on the metadata from each artifact's labelled mediums.",
+  "Colors are extracted using <a href=\"https://github.com/jariz/vibrant.js\" target=\"_blank\">Vibrant.js</a> to pull out the prominent colors from the top category of stamps by frequency.",
+  "A featured stamp is hand-selected from the top category of each decade to visualize the top themes and historical context by removing the background and zooming in on the mark. As you interact and explore, the feature will update to a selection from the top category. The remaining stamps below are sorted by their visual similarity to the feature, made possible by processing each artifact's thumbnail image using an LLM that extracts image embeddings."
+]

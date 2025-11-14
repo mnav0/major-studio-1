@@ -95,15 +95,15 @@ const fetchAllData = (url) => {
 // add only the necessary data to our array
 const parseObject = (objectData) => { 
   let rawYearData;
-  const dates = objectData.content.indexedStructured.date;
-  if (dates) {
-    rawYearData = parseInt(dates[dates.length - 1].slice(0, 4));
-  } else if (objectData.content.freetext.date) {
+  if (objectData.content.freetext.date) {
     const firstDateContent = objectData.content.freetext?.date[0].content;
-    rawYearData = parseInt(firstDateContent.slice(-4));
+
+    // use regex to get the first 4 numbers in the firstDateContent field
+    const yearMatch = firstDateContent.match(/\d{4}/);
+    rawYearData = yearMatch ? parseInt(yearMatch[0]) : null;
   }
 
-  const decade = Math.floor(rawYearData / 10) * 10;
+  const decade = rawYearData && Math.floor(rawYearData / 10) * 10;
 
   let currentPlace = "";
   if (objectData.content.indexedStructured.place) {

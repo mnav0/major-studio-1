@@ -15,7 +15,7 @@
     <div id="app">
       <div id="intro-section" class="grid grid-cols-12 gap-4">
         <div class="intro-heading col-span-12">
-          <div class="align-left ">
+          <div class="align-left">
             <p><strong>1765-1894</strong></p>
             <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian National Postal Museum</a></p>
           </div>
@@ -44,38 +44,69 @@
             <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian National Postal Museum</a></p>
           </div>
         </div>
-        <div class="data-heading grid grid-cols-[110px_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-3">
-          <div class="align-left col-span-1">
-            <p class="attr-heading">Decade</p>
-            <div id="slider-container"></div>
-          </div>
-          <div class="align-left col-span-4">
-            <p class="attr-heading">Themes</p>
-            <h2 id="chart-main-themes"></h2>
-          </div>
-          <div class="stamp-example-text col-start-7 col-span-5">
-            <p class="attr-heading">History</p>
-            <p class="historical-context" id="historical-context"></p>
-          </div>
-          <div class="align-left col-start-13 col-span-3">
-            <p class="attr-heading">Materials</p>
-            <div id="featured-materials"></div>
-          </div>
-          <div class="align-left col-start-17 col-span-2">
-            <p class="attr-heading">Colors</p>
-            <div class="colors-container">
-              <div class="color-swatch" id="color-swatch-1"></div>
-              <div class="color-swatch" id="color-swatch-2"></div>
-              <div class="color-swatch" id="color-swatch-3"></div>
-              <div class="color-swatch" id="color-swatch-4"></div>
-              <div class="color-swatch" id="color-swatch-5"></div>
+        <div class="data-heading">
+          <div class="top-heading-container grid grid-cols-[110px_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-3">
+            <div class="align-left col-span-1">
+              <div id="col-heading-0" class="col-heading">
+                <p class="attr-heading">Decade</p>
+                <svg class="carrot" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0.530273 0.530273L4.53027 4.53027L8.53027 0.530273" stroke="#6B5347" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div id="slider-container"></div>
+            </div>
+            <div class="align-left col-span-4">
+              <div id="col-heading-1" class="col-heading">
+                <p class="attr-heading">Themes</p>
+                <svg class="carrot" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0.530273 0.530273L4.53027 4.53027L8.53027 0.530273" stroke="#6B5347" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h2 id="chart-main-themes"></h2>
+            </div>
+            <div class="stamp-example-text col-start-7 col-span-5">
+              <div id="col-heading-2" class="col-heading">
+                <p class="attr-heading">History</p>
+                <svg class="carrot" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0.530273 0.530273L4.53027 4.53027L8.53027 0.530273" stroke="#6B5347" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="historical-context" id="historical-context"></p>
+            </div>
+            <div class="align-left col-start-13 col-span-3">
+              <div id="col-heading-3" class="col-heading">
+                <p class="attr-heading">Materials</p>
+                <svg class="carrot" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0.530273 0.530273L4.53027 4.53027L8.53027 0.530273" stroke="#6B5347" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div id="featured-materials"></div>
+            </div>
+            <div class="align-left col-start-17 col-span-2">
+              <div id="col-heading-4" class="col-heading">
+                <p class="attr-heading">Colors</p>
+                <svg class="carrot" width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0.530273 0.530273L4.53027 4.53027L8.53027 0.530273" stroke="#6B5347" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="colors-container">
+                <div class="color-swatch" id="color-swatch-1"></div>
+                <div class="color-swatch" id="color-swatch-2"></div>
+                <div class="color-swatch" id="color-swatch-3"></div>
+                <div class="color-swatch" id="color-swatch-4"></div>
+                <div class="color-swatch" id="color-swatch-5"></div>
+              </div>
+            </div>
+            <div id="col-heading-5" class="col-heading stamp-image-container col-start-20 col-span-5">
+                <img 
+                  src=""
+                  class="stamp-thumbnail"
+                  id="stamp-highlight-image" />
             </div>
           </div>
-          <div id="stamp-highlight" class="stamp-image-container col-start-20 col-span-5">
-              <img 
-                src=""
-                class="stamp-thumbnail"
-                id="stamp-highlight-image" />
+          <div id="expanded-heading" class="expanded-heading">
+            <p class="about-heading">About</p>
+            <p id="about-text"></p>
           </div>
         </div>
 
@@ -88,6 +119,5 @@
 
     </div>
     <script type="module" src="./src/main.js"></script>
-    <!-- <script type="module" src="./src/data/fetch-data.js"></script> -->
   </body>
 </html>
