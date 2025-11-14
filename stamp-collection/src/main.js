@@ -5,10 +5,11 @@ import { historicalContext, postalContext } from "./constants/context.js";
 import { images, titles, ids } from "./constants/images.js";
 import stampsJSON from "./data/stamps.json" assert { type: "json" };
 import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
-import colorsJSON from "./data/decade-colors.json" assert { type: "json" };
+import colorsJSON from "./data/colors.json" assert { type: "json" };
 import { getAndParseAllData } from "./fetch-data.js";
 import contextRegex from "./constants/text.js";
 import { processInfo } from "./constants/process-info.js";
+import { getColorsForDecadeAndTheme } from "./data/color-analyzer.js";
 
 // state variables
 let selectedDecade = 1760;
@@ -62,7 +63,7 @@ function flattenGroupedData(groupedData) {
         decade: decadeNum,
         theme,           // single string
         count: data.count,
-        stamps: data.stamps // full stamp objects included
+        stamps: data.stamps, // full stamp objects included
       });
     }
   }
@@ -84,21 +85,18 @@ function distToStamp(A, B, stampEmbedding) {
 }
 
 const fetchStampData = () => {
-  getAndParseAllData().then((stampData) => {
+  getAndParseAllData().then(async (stampData) => {
     stampData.forEach((stamp) => {
       stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
+      // Find the color data object and assign it to stamp.colors
+      const colorData = colorsJSON.find(c => c.id === stamp.id);
+      stamp.colors = colorData ? { colorData: colorData.colorData } : null;
     });
 
     // group data by decade and theme
     const grouped = groupByDecadeAndTheme(stampData);
     groupedData = flattenGroupedData(grouped);
-    
-    // fetch colors from json and add to object to look up by decade
-    groupedData.forEach(group => {
-      const colors = colorsJSON[group.decade];
-      group.colors = colors;
-    });
-
+  
     // sort stamps within their decade and theme by their distance from the featured image id
     groupedData.forEach(group => {
       group.stamps.sort((a, b) => {
@@ -128,20 +126,17 @@ const fetchStampData = () => {
   });
 }
 
-const fetchStampDataForDev = () => {
+const fetchStampDataForDev = async () => {
   stampsJSON.forEach((stamp) => {
     stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
+      // Find the color data object and assign it to stamp.colors
+      const colorData = colorsJSON.find(c => c.id === stamp.id);
+      stamp.colors = colorData ? { colorData: colorData.colorData } : null;
   });
   
   // group data by decade and theme
   const grouped = groupByDecadeAndTheme(stampsJSON);
   groupedData = flattenGroupedData(grouped);
-  
-  // fetch colors from json and add to object to look up by decade
-  groupedData.forEach(group => {
-    const colors = colorsJSON[group.decade];
-    group.colors = colors;
-  });
 
   // sort stamps within their decade and theme by their distance from the featured image id
   groupedData.forEach(group => {
@@ -441,11 +436,24 @@ const updateColors = (data) => {
     s.style.backgroundColor = "transparent";
   });
 
-  // update color swatches for this selected decade
-  swatches.forEach((s, idx) => {
-    const decadeColors = data[0]?.colors || [];
-    s.style.backgroundColor = decadeColors[idx];
-  });
+  // Get top 5 colors from the most common theme for this decade
+  const topThemeGroup = data[0]; // data is already sorted by count descending
+  
+  if (topThemeGroup && topThemeGroup.stamps) {
+    const topColors = getColorsForDecadeAndTheme(
+      groupedData, 
+      selectedDecade, 
+      topThemeGroup.theme, 
+      5
+    );
+    
+    // update color swatches with the analyzed colors
+    swatches.forEach((s, idx) => {
+      if (topColors[idx]) {
+        s.style.backgroundColor = topColors[idx];
+      }
+    });
+  }
 }
 
 const updateFeaturedImg = (data) => {
@@ -511,7 +519,6 @@ const toggleAboutInfo = (n) => {
   state.aboutSection.colIndex = n;
 
   allCarrots.forEach((carrot) => {
-    debugger;
     if (carrot.classList.contains("rotated")) {
       carrot.classList.remove("rotated");
     } else if (carrot.parentElement.id === `col-heading-${n}`) {
@@ -548,4 +555,4 @@ const displayData = (data) => {
   updateHeading(data);
 };
 
-fetchStampData();
+fetchStampDataForDev();
