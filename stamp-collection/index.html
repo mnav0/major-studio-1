@@ -38,31 +38,40 @@
       </div>
 
       <div id="data">
-        <div class="data-title grid grid-cols-[425px_1fr] gap-[1em]">
+        <div class="data-title">
           <div class="title-source col-span-2">
             <p id="data-title-text"></p>
             <p>Data from <a href="https://postalmuseum.si.edu/collections/search" tab="_blank">Smithsonian National Postal Museum</a></p>
           </div>
         </div>
-        <div class="data-heading grid grid-cols-[425px_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-[1em]">
+        <div class="data-heading grid grid-cols-[110px_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-3">
           <div class="align-left col-span-1">
-            <p class="chart-dates-results"></p>
+            <p class="attr-heading">Decade</p>
+            <div id="slider-container"></div>
+          </div>
+          <div class="align-left col-span-4">
+            <p class="attr-heading">Themes</p>
             <h2 id="chart-main-themes"></h2>
           </div>
-          <div class="stamp-example-text col-span-5">
+          <div class="stamp-example-text col-start-7 col-span-5">
             <p class="attr-heading">History</p>
             <p class="historical-context" id="historical-context"></p>
           </div>
-          <div class="align-left col-start-7 col-span-2">
+          <div class="align-left col-start-13 col-span-3">
+            <p class="attr-heading">Materials</p>
+            <div id="featured-materials"></div>
+          </div>
+          <div class="align-left col-start-17 col-span-2">
             <p class="attr-heading">Colors</p>
             <div class="colors-container">
               <div class="color-swatch" id="color-swatch-1"></div>
               <div class="color-swatch" id="color-swatch-2"></div>
               <div class="color-swatch" id="color-swatch-3"></div>
               <div class="color-swatch" id="color-swatch-4"></div>
+              <div class="color-swatch" id="color-swatch-5"></div>
             </div>
           </div>
-          <div id="stamp-highlight" class="stamp-image-container col-start-9 col-span-2">
+          <div id="stamp-highlight" class="stamp-image-container col-start-20 col-span-5">
               <img 
                 src=""
                 class="stamp-thumbnail"
@@ -70,11 +79,7 @@
           </div>
         </div>
 
-        <div class="data-content-wrapper grid grid-cols-[300px_1fr] gap-[0]">
-          <div id="slider-container">
-            <!-- slider goes here -->
-          </div>
-
+        <div class="data-content-wrapper">
           <div id="bars-container">
             <!-- bars go here -->
           </div>
@@ -83,5 +88,6 @@
 
     </div>
     <script type="module" src="./src/main.js"></script>
+    <!-- <script type="module" src="./src/data/fetch-data.js"></script> -->
   </body>
 </html>

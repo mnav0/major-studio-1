@@ -6,10 +6,23 @@ import { images, titles, ids } from "./constants/images.js";
 import stampsJSON from "./data/stamps.json" assert { type: "json" };
 import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
 import colorsJSON from "./data/decade-colors.json" assert { type: "json" };
+import { getAndParseAllData } from "./fetch-data.js";
+import contextRegex from "./constants/text.js";
 
 // state variables
 let selectedDecade = 1760;
 let groupedData = [];
+
+// to use as state variables and pull from to update heading
+let state = {
+  selectedDecade: 1760,
+  stamps: [],
+  themeBuckets: [],
+  historicalContext: historicalContext[selectedDecade],
+  materials: [],
+  colors: [],
+  featuredStamp: images[selectedDecade]
+}
 
 function findBucketForTheme(theme) {
   for (const [bucketName, keywords] of Object.entries(themeBuckets)) {
@@ -66,6 +79,51 @@ function distToStamp(A, B, stampEmbedding) {
 }
 
 const fetchStampData = () => {
+  getAndParseAllData().then((stampData) => {
+    stampData.forEach((stamp) => {
+      stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
+    });
+
+    // group data by decade and theme
+    const grouped = groupByDecadeAndTheme(stampData);
+    groupedData = flattenGroupedData(grouped);
+    
+    // fetch colors from json and add to object to look up by decade
+    groupedData.forEach(group => {
+      const colors = colorsJSON[group.decade];
+      group.colors = colors;
+    });
+
+    // sort stamps within their decade and theme by their distance from the featured image id
+    groupedData.forEach(group => {
+      group.stamps.sort((a, b) => {
+        if (a.embedding && b.embedding) {
+          const featuredStamp = stampData.find(s => s.id === ids[group.decade]);
+          let featuredEmbedding = featuredStamp.embedding;
+          if (!featuredEmbedding) {
+            featuredEmbedding = stamps[0].embedding; // fallback to first stamp embedding
+          }
+          return distToStamp(a, b, featuredEmbedding);
+        } else {
+          return 0;
+        }
+      });
+    });
+
+    drawTimeSlider(groupedData);
+
+    setupEntryButton(groupedData);
+
+    // set title with the total number of stamps
+    const titleText = document.querySelector("#data-title-text");
+    titleText.innerHTML = `<strong>America’s Stamp Collection / 1765-1894</strong> (${stampData.length} stamps)`;
+    titleText.onclick = () => {
+      enterHomepage();
+    }
+  });
+}
+
+const fetchStampDataForDev = () => {
   stampsJSON.forEach((stamp) => {
     stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
   });
@@ -134,27 +192,14 @@ const enterHomepage = () => {
 }
 
 const drawTimeSlider = (data) => {
-  // slider layout constants
-  const SLIDER_MIN_HEIGHT = 260;
-  const SLIDER_MAX_HEIGHT = 1200;
-  const SLIDER_TOP_OFFSET = 72;
-
   const sliderSection = document.querySelector("#slider-container");
   sliderSection.style.display = "block";
   const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
 
-  // compute available height for slider SVG based on viewport and a fixed top offset
-  const viewportHeight = window.innerHeight - 320;
-  // subtract a small bottom margin so the slider isn't flush to the bottom of the viewport
-  const availableHeight = Math.max(SLIDER_MIN_HEIGHT, Math.min(SLIDER_MAX_HEIGHT, viewportHeight - SLIDER_TOP_OFFSET));
-
-  // remove previous svg if present (helps when resizing)
-  d3.select("#slider-container svg").remove();
-
   // Create vertical timeline structure
-  const margin = { top: 12, right: 10, bottom: 50, left: 230 };
-  const width = 300; // Match CSS width
-  const height = availableHeight;
+  const margin = { top: 10, right: 0, bottom: 10, left: 10 };
+  const width = 110; // Match CSS width
+  const height = 300;
 
   const svg = d3.select("#slider-container")
     .append("svg")
@@ -179,7 +224,7 @@ const drawTimeSlider = (data) => {
     .attr("y1", y.range()[0])
     .attr("y2", y.range()[1])
     .attr("stroke", colors.middle)
-    .attr("stroke-width", 3)
+    .attr("stroke-width", 1)
     .attr("stroke-linecap", "round");
 
   // Add decade ticks and labels
@@ -188,136 +233,68 @@ const drawTimeSlider = (data) => {
     .enter()
     .append("line")
     .attr("class", "tick")
-    .attr("x1", -10)
-    .attr("x2", 10)
+    .attr("x1", -8)
+    .attr("x2", 8)
     .attr("y1", d => y(d))
     .attr("y2", d => y(d))
     .attr("stroke", colors.middle)
-    .attr("stroke-width", 2);
+    .attr("stroke-width", 1);
 
   timeline.selectAll("text.decade-label")
     .data(decades)
     .enter()
     .append("text")
     .attr("class", "decade-label")
-    .attr("x", 20)
+    .attr("x", 40)
     .attr("y", d => y(d))
     .attr("dy", "0.35em")
     .attr("text-anchor", "start")
     .style("font-size", "14px")
-    .text(d => d);
+    .text(d => d === selectedDecade ? d : '');
 
-  // Add postal context markers on the left
-  const postalContextData = Object.entries(postalContext).map(([decade, text]) => ({
-    decade: parseInt(decade),
-    text
-  }));
+  // add line for current position indicator
+  const lineIndicator = timeline.append("line")
+    .attr("class", "indicator-line")
+    .attr("x1", 0)
+    .attr("x2", 35)
+    .attr("y1", y(selectedDecade))
+    .attr("y2", y(selectedDecade))
+    .attr("stroke", colors.middle)
+    .attr("stroke-width", 1);
 
-  timeline.selectAll("circle.postal-marker")
-    .data(postalContextData)
-    .enter()
-    .append("circle")
-    .attr("class", "postal-marker")
-    .attr("cx", 0)
-    .attr("cy", d => y(d.decade))
-    .attr("r", 6)
-    .attr("fill", colors.dark)
-    .attr("stroke", colors.light)
-    .attr("stroke-width", 2);
-
-  timeline.selectAll("text.postal-context")
-    .data(postalContextData)
-    .enter()
-    .append("text")
-    .attr("class", "postal-context")
-    .attr("x", -25)
-    .attr("y", d => y(d.decade) + 5) // Position above the marker
-    .attr("text-anchor", "end")
-    .style("font-size", "14px")
-    .style("line-height", "1.4")
-    .style("text-transform", "none") // Prevent CSS text-transform from affecting this
-    .each(function(d) {
-      const words = d.text.split(" ");
-      const lineHeight = 1.3;
-      const textElement = d3.select(this);
-      let line = [];
-      let lineNumber = 0;
-      const maxCharsPerLine = 23; // Character-based wrapping for better control
-      
-      words.forEach((word, i) => {
-        const testLine = line.length > 0 ? line.join(" ") + " " + word : word;
-        
-        // Check if adding this word would exceed the max length
-        if (testLine.length > maxCharsPerLine && line.length > 0) {
-          // Output current line before adding this word
-          textElement.append("tspan")
-            .attr("x", -25)
-            .attr("dy", lineNumber === 0 ? "0em" : `${lineHeight}em`)
-            .attr("text-anchor", "end")
-            .text(line.join(" "));
-          
-          line = [word]; // Start new line with current word
-          lineNumber++;
-        } else {
-          line.push(word);
-        }
-        
-        // If this is the last word, output the remaining line
-        if (i === words.length - 1) {
-          textElement.append("tspan")
-            .attr("x", -25)
-            .attr("dy", lineNumber === 0 ? "0em" : `${lineHeight}em`)
-            .attr("text-anchor", "end")
-            .text(line.join(" "));
-        }
-      });
-    });
-
-  // Add current position indicator
-  const indicator = timeline.append("circle")
+  // add circle for current position indicator
+  const circleIndicator = timeline.append("circle")
     .attr("class", "position-indicator")
     .attr("cx", 0)
     .attr("cy", y(selectedDecade))
     .attr("r", 8)
-    .attr("fill", colors.middle)
-    .attr("stroke", colors.dark)
-    .attr("stroke-width", 3);
+    .attr("fill", colors.dark);
 
-  // Make decade labels and ticks clickable
-  timeline.selectAll("text.decade-label")
+  // add click interaction to ticks with padding around using invisible rects
+  const tickPadding = 10;
+  timeline.selectAll("rect.tick-area")
+    .data(decades)
+    .enter()
+    .append("rect")
+    .attr("class", "tick-area")
+    .attr("x", -8 - tickPadding)
+    .attr("y", d => y(d) - tickPadding)
+    .attr("width", 16 + tickPadding * 2)
+    .attr("height", tickPadding * 2)
+    .attr("fill", "transparent")
     .style("cursor", "pointer")
     .on("click", function(event, d) {
       selectedDecade = d;
-      indicator.transition()
+      lineIndicator.transition()
+        .duration(150)
+        .attr("y1", y(selectedDecade))
+        .attr("y2", y(selectedDecade));
+      circleIndicator.transition()
         .duration(150)
         .attr("cy", y(selectedDecade));
       
       const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-      displayData(dataToDisplay);
-    });
-
-  timeline.selectAll("line.tick")
-    .style("cursor", "pointer")
-    .on("click", function(event, d) {
-      selectedDecade = d;
-      indicator.transition()
-        .duration(150)
-        .attr("cy", y(selectedDecade));
-      
-      const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-      displayData(dataToDisplay);
-    });
-
-  // Add click handler to postal context markers
-  timeline.selectAll("circle.postal-marker")
-    .style("cursor", "pointer")
-    .on("click", function(event, d) {
-      selectedDecade = d.decade;
-      indicator.transition()
-        .duration(150)
-        .attr("cy", y(selectedDecade));
-      
-      const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
+      timeline.selectAll("text.decade-label").text(dd => dd === selectedDecade ? dd : '');
       displayData(dataToDisplay);
     });
 }
@@ -388,23 +365,10 @@ const drawBars = (data) => {
   });
 }
 
-// when passed to here the data is already sorted by count descending and filtered by decade
-const updateHeading = (data) => {
-  const swatches = document.querySelectorAll(".color-swatch");
-  swatches.forEach(s => {
-    s.style.backgroundColor = "transparent";
-  });
+const updateDecade = () => {
+}
 
-  // calculate total number of stamps in this decade
-  let stampsCount = 0;
-  data.forEach((d) => {
-    stampsCount += d.count;
-  });
-
-  // update the subheading with the selected decade and number of stamps
-  const heading = document.querySelector(".chart-dates-results");
-  heading.innerHTML = `<strong>${selectedDecade}s / Themes</strong> (${stampsCount} stamps)`;
-
+const updateThemes = (data) => {
   const mainThemes = document.querySelector("#chart-main-themes");
   const seenBuckets = new Set();
   const topBuckets = [];
@@ -419,34 +383,105 @@ const updateHeading = (data) => {
   }
 
   mainThemes.innerHTML = topBuckets.join(", ");
+}
 
+const updateHistory = () => {
   // update the historical context paragraph
   const histContext = document.querySelector("#historical-context");
-  histContext.innerHTML = historicalContext[selectedDecade];
+  const content = historicalContext[selectedDecade];
 
+  // parse content to match all context words found and wrap in spans
+  const parsedContent = content.replace(contextRegex, (match) => {
+    return `<span class="filter-word">${match}</span>`;
+  });
+
+  histContext.innerHTML = parsedContent;
+}
+
+const updateMaterials = (data) => {
+  // clear previous materials
+  const featuredMaterialsContainer = document.querySelector("#featured-materials");
+  featuredMaterialsContainer.innerHTML = "";
+
+  // update the featured materials to fetch those with highest frequency for the top theme
+  const topThemeStamps = data[0]?.stamps || [];
+  const materialCounts = {};
+  topThemeStamps.forEach((stamp) => {
+    stamp.materials.forEach((material) => {
+      const matLower = material.toLowerCase();
+      if (materialCounts[matLower]) {
+        materialCounts[matLower]++;
+      } else {
+        materialCounts[matLower] = 1;
+      }
+    });
+  });
+
+
+  // sort materials by frequency
+  const sortedMaterials = Object.entries(materialCounts).sort((a, b) => b[1] - a[1]);
+  const topMaterials = sortedMaterials.slice(0, 5).map(entry => entry[0]);
+
+  topMaterials.forEach((material) => {
+    const materialTag = document.createElement("p");
+    materialTag.className = "material-item";
+    materialTag.textContent = material;
+    featuredMaterialsContainer.appendChild(materialTag);
+  });
+}
+
+const updateColors = (data) => {
+  const swatches = document.querySelectorAll(".color-swatch");
+  swatches.forEach(s => {
+    s.style.backgroundColor = "transparent";
+  });
+
+  // update color swatches for this selected decade
+  swatches.forEach((s, idx) => {
+    const decadeColors = data[0]?.colors || [];
+    s.style.backgroundColor = decadeColors[idx];
+  });
+}
+
+const updateFeaturedImg = (data) => {
   // update the stamp highlight image to the featured stamp for the decade
   const imgContainer = document.querySelector("#stamp-highlight");
   const img = document.querySelector("#stamp-highlight-image");
   img.src = "";
   img.alt = "";
-  imgContainer.classList.remove("horizontal-image-container");
+  img.classList.remove("horizontal-stamp-thumbnail");
+  img.classList.remove("tall-stamp-thumbnail");
 
-  if (selectedDecade === 1890 || selectedDecade === 1780) {
-    imgContainer.classList.add("horizontal-image-container");
+  if (selectedDecade === 1890 || selectedDecade === 1780 || selectedDecade === 1800) {
+    img.classList.add("horizontal-stamp-thumbnail");
+  } else if (selectedDecade === 1760 || selectedDecade === 1880) {
+    img.classList.add("tall-stamp-thumbnail");
   }
 
   const stampToDisplay = images[selectedDecade];
-
-  // update color swatches for this selected decade
-  swatches.forEach((s, idx) => {
-    const decadeColors = data[0]?.colors || [];
-    if (decadeColors[idx + 1]) {
-      s.style.backgroundColor = decadeColors[idx + 1];
-    }
-  });
-
   img.src = stampToDisplay;
   img.alt = titles[selectedDecade];
+}
+
+const updateStampsCount = (data) => {
+  // calculate total number of stamps in this decade
+  let stampsCount = 0;
+  data.forEach((d) => {
+    stampsCount += d.count;
+  });
+}
+
+// when passed to here the data is already sorted by count descending and filtered by decade
+const updateHeading = (data) => {
+  updateStampsCount(data);
+  updateColors(data)
+
+  updateThemes(data);
+  updateHistory(data);
+
+  updateMaterials(data);
+
+  updateFeaturedImg(data);
 }
 
 const displayData = (data) => {
@@ -460,12 +495,6 @@ const displayData = (data) => {
   
   drawBars(data);
   updateHeading(data);
-}
+};
 
-fetchStampData();
-// redraw the slider on resize so the SVG height matches the new viewport
-window.addEventListener('resize', () => {
-  if (groupedData && groupedData.length) {
-    drawTimeSlider(groupedData);
-  }
-});
+fetchStampDataForDev();
