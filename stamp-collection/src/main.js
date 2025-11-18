@@ -423,10 +423,12 @@ const updateMaterials = (data) => {
   const topMaterials = sortedMaterials.slice(0, 5).map(entry => entry[0]);
 
   topMaterials.forEach((material) => {
+    const materialDiv = document.createElement("div");
     const materialTag = document.createElement("p");
-    materialTag.className = "material-item";
+    materialDiv.className = "material-item";
     materialTag.textContent = material;
-    featuredMaterialsContainer.appendChild(materialTag);
+    materialDiv.appendChild(materialTag);
+    featuredMaterialsContainer.appendChild(materialDiv);
   });
 }
 
