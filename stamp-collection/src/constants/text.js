@@ -9,7 +9,7 @@ const contextWords = [
   /\bUnion\b/i,
   /\bTax\b/i,
   /\bCommemorative\b/i,
-  /\bThe Stamp Act\b/i,
+  /\bStamp Act\b/i,
   /\bRevolutionary\b/i,
   /\bRevolution\b/i,
   /\bColumbus\b/i,
@@ -23,6 +23,7 @@ const contextWords = [
   /\bAmerican\b/i,
   /\bBritish\b/i,
   /\bissue\b/i,
+  /\bpopular\b/i,
 ]
 
 // build a regex that matches any of the context words

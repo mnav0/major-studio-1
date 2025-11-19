@@ -335,7 +335,7 @@ p a:hover {
   display: inline;
 }
 
-.material-item p:hover {
+.material-item p:hover:not(.selected-word){
   background-color: var(--color-middle);
 }
 
@@ -398,4 +398,14 @@ p a:hover {
 
 #data-title-text strong:hover {
   border-bottom: 1px solid var(--color-primary-dark);
+}
+
+.selected-color {
+  outline: 1px solid var(--color-primary-dark);
+  outline-offset: 1px;
+}
+
+.selected-word {
+  background-color: var(--color-primary-dark);
+  color: var(--color-primary-light);
 }

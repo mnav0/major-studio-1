@@ -11,23 +11,72 @@ import contextRegex from "./constants/text.js";
 import { processInfo } from "./constants/process-info.js";
 import { getColorsForDecadeAndTheme } from "./data/color-analyzer.js";
 
-// state variables
-let selectedDecade = 1760;
-let groupedData = [];
+// constant, doesn't change with state
+let allStamps = [];
 
-// to use as state variables and pull from to update heading
+// to use as state variables and pull from to update filtering
 let state = {
   selectedDecade: 1760,
   stamps: [],
   themeBuckets: [],
-  historicalContext: historicalContext[selectedDecade],
+  historicalContext: '',
+  words: [],
   materials: [],
   colors: [],
-  featuredStamp: images[selectedDecade],
+  decades: [],
+  featuredStamp: null,
   aboutSection: {
     isOpen: false,
     colIndex: null
   }
+}
+
+// for the selected decade, materials, and colors update the stamps and decades
+const getFilteredStampData = () => {
+  const { selectedDecade, stamps, materials, words, colors } = state;
+
+  // TODO add decade updating and use stamps rather than allStamps but use this to start before scroll is functioning
+  let filteredStamps = allStamps.filter(s => s.decade === selectedDecade);
+
+  // Get currently selected filters
+  const selectedMaterials = materials.filter(m => m.selected).map(m => m.name);
+  const selectedWords = words.filter(w => w.selected).map(w => w.text);
+
+  // Apply each filter type if any are selected
+  if (selectedMaterials.length > 0) {
+    filteredStamps = filteredStamps.filter(stamp =>
+      selectedMaterials.some(mat =>
+        stamp.materials.some(m => m.toLowerCase() === mat.toLowerCase())
+      )
+    );
+  }
+
+  if (selectedWords.length > 0) {
+    filteredStamps = filteredStamps.filter(stamp => {
+      const title = stamp.title.toLowerCase();
+      const desc = stamp.description.toLowerCase();
+      return selectedWords.some(word =>
+        title.includes(word.toLowerCase()) || desc.includes(word.toLowerCase())
+      );
+    });
+  }
+
+  if (filteredStamps.length === 0) {
+    // Clear material selections
+    state.materials.forEach(m => m.selected = false);
+    document.querySelectorAll("#featured-materials .selected-word").forEach(el => {
+      el.classList.remove("selected-word");
+    });
+    
+    // Clear word selections
+    state.words.forEach(w => w.selected = false);
+
+    filteredStamps = allStamps.filter(s => s.decade === selectedDecade);
+  }
+
+  state.stamps = filteredStamps;
+  
+  return filteredStamps;
 }
 
 function findBucketForTheme(theme) {
@@ -93,29 +142,15 @@ const fetchStampData = () => {
       stamp.colors = colorData ? { colorData: colorData.colorData } : null;
     });
 
-    // group data by decade and theme
-    const grouped = groupByDecadeAndTheme(stampData);
-    groupedData = flattenGroupedData(grouped);
-  
-    // sort stamps within their decade and theme by their distance from the featured image id
-    groupedData.forEach(group => {
-      group.stamps.sort((a, b) => {
-        if (a.embedding && b.embedding) {
-          const featuredStamp = stampData.find(s => s.id === ids[group.decade]);
-          let featuredEmbedding = featuredStamp.embedding;
-          if (!featuredEmbedding) {
-            featuredEmbedding = stamps[0].embedding; // fallback to first stamp embedding
-          }
-          return distToStamp(a, b, featuredEmbedding);
-        } else {
-          return 0;
-        }
-      });
-    });
+    // update allStamps after merging
+    allStamps = stampData;
+    state.stamps = stampData;
 
-    drawTimeSlider(groupedData);
+    const grouped = groupByDecadeAndTheme(allStamps);
+    state.decades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
 
-    setupEntryButton(groupedData);
+    setupEntryButton();
+    drawTimeSlider(state.decades);
 
     // set title with the total number of stamps
     const titleText = document.querySelector("#data-title-text");
@@ -133,30 +168,16 @@ const fetchStampDataForDev = async () => {
       const colorData = colorsJSON.find(c => c.id === stamp.id);
       stamp.colors = colorData ? { colorData: colorData.colorData } : null;
   });
-  
-  // group data by decade and theme
-  const grouped = groupByDecadeAndTheme(stampsJSON);
-  groupedData = flattenGroupedData(grouped);
 
-  // sort stamps within their decade and theme by their distance from the featured image id
-  groupedData.forEach(group => {
-    group.stamps.sort((a, b) => {
-      if (a.embedding && b.embedding) {
-        const featuredStamp = stampsJSON.find(s => s.id === ids[group.decade]);
-        let featuredEmbedding = featuredStamp.embedding;
-        if (!featuredEmbedding) {
-          featuredEmbedding = stamps[0].embedding; // fallback to first stamp embedding
-        }
-        return distToStamp(a, b, featuredEmbedding);
-      } else {
-        return 0;
-      }
-    });
-  });
+  // update allStamps after merging
+  allStamps = stampData;
+  state.stamps = stampData;
 
-  drawTimeSlider(groupedData);
+  const grouped = groupByDecadeAndTheme(allStamps);
+  state.decades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
 
-  setupEntryButton(groupedData);
+  setupEntryButton();
+  drawTimeSlider(state.decades);
 
   // set title with the total number of stamps
   const titleText = document.querySelector("#data-title-text");
@@ -166,21 +187,24 @@ const fetchStampDataForDev = async () => {
   }
 }
 
-const setupEntryButton = (data) => {
+const setupEntryButton = () => {
   const entryButton = document.querySelector("#entry-button");
   entryButton.style.display = "inline-block";
 
   entryButton.addEventListener("click", (e) => {
-    enterVisualization(data);
+    enterVisualization();
   })
 }
 
-const enterVisualization = (data) => {
+const enterVisualization = () => {
   const introSection = document.querySelector("#intro-section");
   introSection.style.display = "none";
-
-  const dataToDisplay = data.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-  displayData(dataToDisplay);
+  
+  const dataSection = document.querySelector("#data");
+  dataSection.style.display = "block";
+  groupAndDisplayData();
+  
+  setupClickableHeadings();
 }
 
 const enterHomepage = () => {
@@ -191,10 +215,9 @@ const enterHomepage = () => {
   dataSection.style.display = "none";
 }
 
-const drawTimeSlider = (data) => {
+const drawTimeSlider = (decades) => {
   const sliderSection = document.querySelector("#slider-container");
   sliderSection.style.display = "block";
-  const decades = [...new Set(data.map(d => d.decade))].sort((a, b) => a - b);
 
   // Create vertical timeline structure
   const margin = { top: 10, right: 0, bottom: 10, left: 10 };
@@ -250,15 +273,15 @@ const drawTimeSlider = (data) => {
     .attr("dy", "0.35em")
     .attr("text-anchor", "start")
     .style("font-size", "14px")
-    .text(d => d === selectedDecade ? d : '');
+    .text(d => d === state.selectedDecade ? d : '');
 
   // add line for current position indicator
   const lineIndicator = timeline.append("line")
     .attr("class", "indicator-line")
     .attr("x1", 0)
     .attr("x2", 35)
-    .attr("y1", y(selectedDecade))
-    .attr("y2", y(selectedDecade))
+    .attr("y1", y(state.selectedDecade))
+    .attr("y2", y(state.selectedDecade))
     .attr("stroke", colors.middle)
     .attr("stroke-width", 1);
 
@@ -266,7 +289,7 @@ const drawTimeSlider = (data) => {
   const circleIndicator = timeline.append("circle")
     .attr("class", "position-indicator")
     .attr("cx", 0)
-    .attr("cy", y(selectedDecade))
+    .attr("cy", y(state.selectedDecade))
     .attr("r", 8)
     .attr("fill", colors.dark);
 
@@ -284,18 +307,18 @@ const drawTimeSlider = (data) => {
     .attr("fill", "transparent")
     .style("cursor", "pointer")
     .on("click", function(event, d) {
-      selectedDecade = d;
+      state.selectedDecade = d;
       lineIndicator.transition()
         .duration(150)
-        .attr("y1", y(selectedDecade))
-        .attr("y2", y(selectedDecade));
+        .attr("y1", y(state.selectedDecade))
+        .attr("y2", y(state.selectedDecade));
       circleIndicator.transition()
         .duration(150)
-        .attr("cy", y(selectedDecade));
-      
-      const dataToDisplay = groupedData.filter((item) => item.decade == selectedDecade).sort((a, b) => b.count - a.count);
-      timeline.selectAll("text.decade-label").text(dd => dd === selectedDecade ? dd : '');
-      displayData(dataToDisplay);
+        .attr("cy", y(state.selectedDecade));
+
+      // const dataToDisplay = groupedData.filter((item) => item.decade == state.selectedDecade).sort((a, b) => b.count - a.count);
+      timeline.selectAll("text.decade-label").text(dd => dd === state.selectedDecade ? dd : '');
+      groupAndDisplayData();
     });
 }
 
@@ -331,7 +354,7 @@ const drawBars = (data) => {
 
       const aspectRatio = stamp.media[0].resources?.[0]?.width / stamp.media[0].resources?.[0]?.height;
       const isSquare = aspectRatio >= 0.95 && aspectRatio <= 1.05;
-      const isHorizontal = (aspectRatio > 1.05 && aspectRatio < 1.3)|| selectedDecade === 1780;
+      const isHorizontal = (aspectRatio > 1.05 && aspectRatio < 1.3)|| state.selectedDecade === 1780;
       const isWideStamp = aspectRatio > 1.3 && aspectRatio <= 1.5;
       const isExtraWideStamp = aspectRatio > 1.5 && aspectRatio <= 1.8;
       const isWidestStamp = aspectRatio > 1.8;
@@ -365,9 +388,6 @@ const drawBars = (data) => {
   });
 }
 
-const updateDecade = () => {
-}
-
 const updateThemes = (data) => {
   const mainThemes = document.querySelector("#chart-main-themes");
   const seenBuckets = new Set();
@@ -385,23 +405,94 @@ const updateThemes = (data) => {
   mainThemes.innerHTML = topBuckets.join(", ");
 }
 
+const updateSelectedWords = (wordSpan) => {
+  const wordObj = state.words.find(w => w.text === wordSpan.textContent);
+  if (!wordObj?.selected) {
+    wordObj.selected = true;
+    wordSpan.classList.add("selected-word");
+  } else {
+    wordObj.selected = false;
+    wordSpan.classList.remove("selected-word");
+  }
+
+  groupAndDisplayData();
+}
+
 const updateHistory = () => {
+  // Store currently selected words BEFORE clearing
+  const previouslySelected = state.words
+    .filter(w => w.selected)
+    .map(w => w.text);
+  
+  // Clear previous words
+  state.words = [];
+
   // update the historical context paragraph
   const histContext = document.querySelector("#historical-context");
-  const content = historicalContext[selectedDecade];
+  const content = historicalContext[state.selectedDecade];
+  
+  // Helper function to check if a word appears in the filtered stamps
+  const wordExistsInStamps = (word) => {
+    const wordLower = word.toLowerCase();
+    const wordRegex = new RegExp(`\\b${wordLower}`, 'i');
+    
+    return state.stamps.some(stamp => {
+      const title = stamp.title.toLowerCase();
+      const desc = stamp.description.toLowerCase();
+      return wordRegex.test(title) || wordRegex.test(desc);
+    });
+  };
 
   // parse content to match all context words found and wrap in spans
   const parsedContent = content.replace(contextRegex, (match) => {
-    return `<span class="filter-word">${match}</span>`;
+    // Only make it clickable if the word exists in filtered stamps
+    if (wordExistsInStamps(match)) {
+      const wasSelected = previouslySelected.includes(match);
+      state.words.push({ text: match, selected: wasSelected });
+      
+      const selectedClass = wasSelected ? ' selected-word' : '';
+      return `<span class="filter-word${selectedClass}">${match}</span>`;
+    } else {
+      // Word doesn't exist in filtered stamps, render as plain text
+      return match;
+    }
   });
 
   histContext.innerHTML = parsedContent;
+
+
+  const filterWords = document.querySelectorAll(".filter-word");
+  filterWords.forEach((wordSpan) => {
+    wordSpan.addEventListener("click", () => {
+      updateSelectedWords(wordSpan);
+    });
+  });
+}
+
+const updateSelectedMaterials = (materialText) => {
+  const material = state.materials.find(mat => mat.name === materialText.textContent.toLowerCase());
+  if (!material?.selected) {
+    material.selected = true;
+    materialText.classList.add("selected-word");
+  } else {
+    material.selected = false;
+    materialText.classList.remove("selected-word");
+  }
+
+  groupAndDisplayData();
 }
 
 const updateMaterials = (data) => {
   // clear previous materials
   const featuredMaterialsContainer = document.querySelector("#featured-materials");
+
+  // Store currently selected materials BEFORE clearing
+  const previouslySelected = state.materials
+    .filter(m => m.selected)
+    .map(m => m.name);
+  
   featuredMaterialsContainer.innerHTML = "";
+  state.materials = [];
 
   // update the featured materials to fetch those with highest frequency for the top theme
   const topThemeStamps = data[0]?.stamps || [];
@@ -424,10 +515,24 @@ const updateMaterials = (data) => {
 
   topMaterials.forEach((material) => {
     const materialDiv = document.createElement("div");
-    const materialTag = document.createElement("p");
+    const materialText = document.createElement("p");
     materialDiv.className = "material-item";
-    materialTag.textContent = material;
-    materialDiv.appendChild(materialTag);
+    materialText.innerHTML = material;
+    materialDiv.appendChild(materialText);
+
+    materialDiv.onclick = () => updateSelectedMaterials(materialText);
+
+     // Check if this material was previously selected
+    const wasSelected = previouslySelected.includes(material);
+    
+    // Add to state with restored selection state
+    state.materials.push({ name: material, selected: wasSelected });
+    
+    // Apply selected class if it was selected
+    if (wasSelected) {
+      materialText.classList.add("selected-word");
+    }
+    
     featuredMaterialsContainer.appendChild(materialDiv);
   });
 }
@@ -443,8 +548,8 @@ const updateColors = (data) => {
   
   if (topThemeGroup && topThemeGroup.stamps) {
     const topColors = getColorsForDecadeAndTheme(
-      groupedData, 
-      selectedDecade, 
+      data, 
+      state.selectedDecade, 
       topThemeGroup.theme, 
       5
     );
@@ -466,15 +571,15 @@ const updateFeaturedImg = (data) => {
   img.classList.remove("horizontal-stamp-thumbnail");
   img.classList.remove("tall-stamp-thumbnail");
 
-  if (selectedDecade === 1890 || selectedDecade === 1780 || selectedDecade === 1800) {
+  if (state.selectedDecade === 1890 || state.selectedDecade === 1780 || state.selectedDecade === 1800) {
     img.classList.add("horizontal-stamp-thumbnail");
-  } else if (selectedDecade === 1760 || selectedDecade === 1880) {
+  } else if (state.selectedDecade === 1760 || state.selectedDecade === 1880) {
     img.classList.add("tall-stamp-thumbnail");
   }
 
-  const stampToDisplay = images[selectedDecade];
+  const stampToDisplay = images[state.selectedDecade];
   img.src = stampToDisplay;
-  img.alt = titles[selectedDecade];
+  img.alt = titles[state.selectedDecade];
 }
 
 const updateStampsCount = (data) => {
@@ -488,7 +593,7 @@ const updateStampsCount = (data) => {
 // when passed to here the data is already sorted by count descending and filtered by decade
 const updateHeading = (data) => {
   updateStampsCount(data);
-  updateColors(data)
+  updateColors(data);
 
   updateThemes(data);
   updateHistory(data);
@@ -535,26 +640,42 @@ const toggleAboutInfo = (n) => {
   }
 }
 
-const setupHeadingDropdowns = () => {
+const setupClickableHeadings = () => {
   const clickableHeadings = document.querySelectorAll(".col-heading");
 
   clickableHeadings.forEach((heading, index) => {
     heading.onclick = () => toggleAboutInfo(index);
-  })
+  });
 }
 
-const displayData = (data) => {
-  // make sure data section is visible
-  const dataSection = document.querySelector("#data");
-  dataSection.style.display = "block";
+const groupAndDisplayData = () => {
+  const filteredStamps = getFilteredStampData();
+  const grouped = groupByDecadeAndTheme(filteredStamps);
 
-  // clear previously drawn bars
+  const flattened = flattenGroupedData(grouped);
+  const dataToDisplay = flattened.sort((a, b) => b.count - a.count);
+
+  // need to sort based on the embeddings distance from the featured stamp for the decade
+  flattened.forEach(group => {
+    group.stamps.sort((a, b) => {
+      if (a.embedding && b.embedding) {
+        const featuredStamp = allStamps.find(s => s.id === ids[group.decade]);
+        let featuredEmbedding = featuredStamp.embedding;
+        if (!featuredEmbedding) {
+          featuredEmbedding = filteredStamps[0].embedding; // fallback to first stamp embedding
+        }
+        return distToStamp(a, b, featuredEmbedding);
+      } else {
+        return 0;
+      }
+    });
+  });
+
   const barsContainer = document.querySelector("#bars-container");
   barsContainer.innerHTML = "";
-  
-  setupHeadingDropdowns();
-  drawBars(data);
-  updateHeading(data);
-};
 
-fetchStampDataForDev();
+  updateHeading(dataToDisplay);
+  drawBars(dataToDisplay);
+}
+
+fetchStampData();
