@@ -398,7 +398,6 @@ const toggleStampModal = () => {
 
   if (state.fullScreenStamp) {
     modal.style.display = "flex";
-    body.style.overflow = "hidden";
 
     const imgSizeParam = "max";
     const imgSizeValue = 2000;
