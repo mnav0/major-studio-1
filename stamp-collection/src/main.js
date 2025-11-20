@@ -46,7 +46,7 @@ const getFilteredStampData = () => {
   // Apply each filter type if any are selected
   if (selectedMaterials.length > 0) {
     filteredStamps = filteredStamps.filter(stamp =>
-      selectedMaterials.some(mat =>
+      selectedMaterials.every(mat =>
         stamp.materials.some(m => m.toLowerCase() === mat.toLowerCase())
       )
     );
@@ -134,6 +134,27 @@ function distToStamp(A, B, stampEmbedding) {
   return diffSumA - diffSumB;
 }
 
+const getAspectRatio = (stamp) => {
+  const aspectRatio = stamp.media[0].resources?.[0]?.width / stamp.media[0].resources?.[0]?.height;
+
+  let stampRatio = "";
+
+  if ((aspectRatio > 1.05 && aspectRatio < 1.3) || stamp.decade === 1780) {
+    stampRatio = "horizontal";
+  } else if (aspectRatio >= 0.95 && aspectRatio <= 1.05) {
+    stampRatio = "square";
+  } else if (aspectRatio > 1.3 && aspectRatio <= 1.5) {
+    stampRatio = "wide";
+  } else if (aspectRatio > 1.5 && aspectRatio <= 1.8) {
+    stampRatio = "extra-wide";
+  } else if (aspectRatio > 1.8) {
+    stampRatio = "widest";
+  } else if (aspectRatio < 0.6) {
+    stampRatio = "tall";
+  }
+
+  return stampRatio;
+}
 const fetchStampData = () => {
   getAndParseAllData().then(async (stampData) => {
     stampData.forEach((stamp) => {
@@ -141,6 +162,7 @@ const fetchStampData = () => {
       // Find the color data object and assign it to stamp.colors
       const colorData = colorsJSON.find(c => c.id === stamp.id);
       stamp.colors = colorData ? { colorData: colorData.colorData } : null;
+      stamp.aspectRatio = getAspectRatio(stamp);
     });
 
     // update allStamps after merging
@@ -352,32 +374,11 @@ const drawBars = (data) => {
       const imgSizeParam = "max";
       const imgSizeValue = 200;
       const imageUrl = stamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
-
-      const aspectRatio = stamp.media[0].resources?.[0]?.width / stamp.media[0].resources?.[0]?.height;
-      const isSquare = aspectRatio >= 0.95 && aspectRatio <= 1.05;
-      const isHorizontal = (aspectRatio > 1.05 && aspectRatio < 1.3)|| state.selectedDecade === 1780;
-      const isWideStamp = aspectRatio > 1.3 && aspectRatio <= 1.5;
-      const isExtraWideStamp = aspectRatio > 1.5 && aspectRatio <= 1.8;
-      const isWidestStamp = aspectRatio > 1.8;
-      const isTall = aspectRatio < 0.6;
       
       stampsContainer.append("div")
         .attr("class", () => {
           const baseClass = "stamp-image-container-small";
-          let finalClass = baseClass;
-          if (isSquare) {
-            finalClass += " square-stamp";
-          } else if (isTall) {
-            finalClass += " tall-stamp";
-          } else if (isWidestStamp) {
-            finalClass += " widest-stamp";
-          } else if (isExtraWideStamp) {
-            finalClass += " extra-wide-stamp";
-          } else if (isWideStamp) {
-            finalClass += " wide-stamp";
-          } else if (isHorizontal) {
-            finalClass += " horizontal-stamp";
-          }
+          const finalClass = !!stamp.aspectRatio ? `${baseClass} ${stamp.aspectRatio}-stamp` : baseClass;
           return finalClass;
         })
         .append("img")
@@ -395,18 +396,26 @@ const drawBars = (data) => {
 
 const toggleStampModal = () => {
   const modal = document.querySelector("#modal");
+  const modalContent = modal.querySelector(".modal-content");
 
   if (state.fullScreenStamp) {
-    modal.style.display = "flex";
+    modal.style.display = "block";
 
     const imgSizeParam = "max";
-    const imgSizeValue = 2000;
+    const imgSizeValue = 1500;
     const imageUrl = state.fullScreenStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
 
     const imageContainer = document.querySelector("#modal-image");
-    const img = imageContainer.querySelector("img") || document.createElement("img");
+
+    if (state.fullScreenStamp.aspectRatio === "tall") {
+      imageContainer.classList.add("tall-modal-image");
+    }
+
+    const img = imageContainer.querySelector("img");
+
     img.src = imageUrl;
     img.alt = state.fullScreenStamp.title;
+
 
     const textContainer = modal.querySelector("#modal-text").querySelector('.text');
     const titleElem = document.createElement("h2");
@@ -423,6 +432,7 @@ const toggleStampModal = () => {
       img.src = "";
       img.alt = "";
       textContainer.innerHTML = "";
+      imageContainer.classList.remove("tall-modal-image");
     }
   }
 }

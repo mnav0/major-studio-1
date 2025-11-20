@@ -118,17 +118,20 @@
       </div>
 
       <div id="modal">
-        <div id="modal-image">
-           <img 
-              src=""
-              class="full-screen-stamp-image"
-            />
-        </div>
-        <div id="modal-text">
-          <div class="close-button-container">
-            <button id="close-modal-button">X</button>
+        <div class="modal-content grid grid-cols-12 gap-4">
+          <div id="modal-image" class="col-span-6 modal-image-container">
+            <img 
+                src=""
+                class="full-screen-stamp-image"
+              />
           </div>
-          <div class="text"></div>
+          <div id="modal-text" class="col-span-6">
+            <div class="close-button-container">
+              <button id="close-modal-button">X</button>
+            </div>
+            <div class="text"></div>
+          </div>
+        </div>
       </div>
 
     </div>
