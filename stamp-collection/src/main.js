@@ -28,7 +28,8 @@ let state = {
   aboutSection: {
     isOpen: false,
     colIndex: null
-  }
+  },
+  fullScreenStamp: null
 }
 
 // for the selected decade, materials, and colors update the stamps and decades
@@ -382,10 +383,49 @@ const drawBars = (data) => {
         .append("img")
         .attr("class", "stamp-image-small")
         .attr("src", imageUrl)
-        .attr("alt", stamp.title);
+        .attr("alt", stamp.title)
+        .on("click", () => {
+          state.fullScreenStamp = stamp;
+          toggleStampModal();
+        });
         
     });
   });
+}
+
+const toggleStampModal = () => {
+  const modal = document.querySelector("#modal");
+
+  if (state.fullScreenStamp) {
+    modal.style.display = "flex";
+    body.style.overflow = "hidden";
+
+    const imgSizeParam = "max";
+    const imgSizeValue = 2000;
+    const imageUrl = state.fullScreenStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+
+    const imageContainer = document.querySelector("#modal-image");
+    const img = imageContainer.querySelector("img") || document.createElement("img");
+    img.src = imageUrl;
+    img.alt = state.fullScreenStamp.title;
+
+    const textContainer = modal.querySelector("#modal-text").querySelector('.text');
+    const titleElem = document.createElement("h2");
+    titleElem.textContent = state.fullScreenStamp.title;
+    const descElem = document.createElement("p");
+    descElem.textContent = state.fullScreenStamp.description;
+    textContainer.appendChild(titleElem);
+    textContainer.appendChild(descElem);
+
+    const closeButton = document.querySelector("#close-modal-button");
+    closeButton.onclick = () => {
+      state.fullScreenStamp = null;
+      modal.style.display = "none";
+      img.src = "";
+      img.alt = "";
+      textContainer.innerHTML = "";
+    }
+  }
 }
 
 const updateThemes = (data) => {
