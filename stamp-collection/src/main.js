@@ -613,22 +613,49 @@ const updateColors = (data) => {
 }
 
 const updateFeaturedImg = (data) => {
-  // update the stamp highlight image to the featured stamp for the decade
+  // update the stamp highlight image
   const img = document.querySelector("#stamp-highlight-image");
   img.src = "";
   img.alt = "";
+  
+  // Remove all aspect ratio classes
   img.classList.remove("horizontal-stamp-thumbnail");
   img.classList.remove("tall-stamp-thumbnail");
+  img.classList.remove("square-stamp-thumbnail");
+  img.classList.remove("wide-stamp-thumbnail");
+  img.classList.remove("extra-wide-stamp-thumbnail");
+  img.classList.remove("widest-stamp-thumbnail");
 
-  if (state.selectedDecade === 1890 || state.selectedDecade === 1780 || state.selectedDecade === 1800) {
-    img.classList.add("horizontal-stamp-thumbnail");
-  } else if (state.selectedDecade === 1760 || state.selectedDecade === 1880) {
-    img.classList.add("tall-stamp-thumbnail");
+  // Use the featured stamp that was already determined in groupAndDisplayData
+  const featuredStamp = state.featuredStamp;
+  
+  if (!featuredStamp) {
+    return;
   }
 
-  const stampToDisplay = images[state.selectedDecade];
-  img.src = stampToDisplay;
-  img.alt = titles[state.selectedDecade];
+  // Check if this stamp has a local image available
+  const stampDecade = featuredStamp.decade || state.selectedDecade;
+  const hasLocalImage = ids[stampDecade] === featuredStamp.id;
+
+  let aspectRatioClass = featuredStamp.aspectRatio;
+  if (hasLocalImage) {
+    img.src = images[stampDecade];
+    img.alt = titles[stampDecade];
+
+    if (stampDecade == 1800 || stampDecade == 1890) {
+      aspectRatioClass = "horizontal";
+    }
+
+  } else {
+    const imgSizeParam = "max";
+    const imgSizeValue = 400;
+    img.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+    img.alt = featuredStamp.title || "Featured stamp";
+  }
+
+  if (!!aspectRatioClass) {
+    img.classList.add(`${aspectRatioClass}-stamp-thumbnail`);
+  }
 }
 
 const updateStampsCount = (data) => {
@@ -697,6 +724,29 @@ const setupClickableHeadings = () => {
   });
 }
 
+const getFeaturedStamp = (dataToDisplay) => {
+  const currFeaturedStamp = state.featuredStamp;
+
+  const currFeaturedInStamps = state.stamps.find(s => s.id === currFeaturedStamp?.id);
+
+  const defaultStampId = ids[state.selectedDecade];
+  const defaultStamp = images[state.selectedDecade];
+  const defaultFeaturedInStamps = state.stamps.find(s => s.id === defaultStampId);
+
+  if (defaultFeaturedInStamps) {
+    return defaultFeaturedInStamps;
+  } else if (currFeaturedInStamps) {
+    return currFeaturedStamp;
+  } else {
+    const topTheme = dataToDisplay[0];
+    if (topTheme && topTheme.stamps && topTheme.stamps.length > 0) {
+      return topTheme.stamps[0];
+    }
+  }
+
+  return defaultStamp;
+}
+
 const groupAndDisplayData = () => {
   const filteredStamps = getFilteredStampData();
   const grouped = groupByDecadeAndTheme(filteredStamps);
@@ -704,15 +754,14 @@ const groupAndDisplayData = () => {
   const flattened = flattenGroupedData(grouped);
   const dataToDisplay = flattened.sort((a, b) => b.count - a.count);
 
-  // need to sort based on the embeddings distance from the featured stamp for the decade
+  // Store the featured stamp in state
+  state.featuredStamp = getFeaturedStamp(dataToDisplay);
+
+  // Sort each theme group based on similarity to the featured stamp
   flattened.forEach(group => {
     group.stamps.sort((a, b) => {
       if (a.embedding && b.embedding) {
-        const featuredStamp = allStamps.find(s => s.id === ids[group.decade]);
-        let featuredEmbedding = featuredStamp.embedding;
-        if (!featuredEmbedding) {
-          featuredEmbedding = filteredStamps[0].embedding; // fallback to first stamp embedding
-        }
+        const featuredEmbedding = state.featuredStamp.embedding;
         return distToStamp(a, b, featuredEmbedding);
       } else {
         return 0;
