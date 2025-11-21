@@ -5,6 +5,7 @@ import { historicalContext, postalContext } from "./constants/context.js";
 import { images, titles, ids } from "./constants/images.js";
 import stampsJSON from "./data/stamps.json" assert { type: "json" };
 import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
+import detectedJSON from "./data/detected.json" assert { type: "json" };
 import colorsJSON from "./data/colors.json" assert { type: "json" };
 import { getAndParseAllData } from "./fetch-data.js";
 import contextRegex from "./constants/text.js";
@@ -159,6 +160,7 @@ const fetchStampData = () => {
   getAndParseAllData().then(async (stampData) => {
     stampData.forEach((stamp) => {
       stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
+      stamp.detected = detectedJSON.find(d => d.id === stamp.id)?.detected || null;
       // Find the color data object and assign it to stamp.colors
       const colorData = colorsJSON.find(c => c.id === stamp.id);
       stamp.colors = colorData ? { colorData: colorData.colorData } : null;
@@ -187,9 +189,10 @@ const fetchStampData = () => {
 const fetchStampDataForDev = async () => {
   stampsJSON.forEach((stamp) => {
     stamp.embedding = embeddingsJSON.find(e => e.id === stamp.id)?.embedding || null;
-      // Find the color data object and assign it to stamp.colors
-      const colorData = colorsJSON.find(c => c.id === stamp.id);
-      stamp.colors = colorData ? { colorData: colorData.colorData } : null;
+    stamp.detected = detectedJSON.find(d => d.id === stamp.id)?.detected || null;
+    // Find the color data object and assign it to stamp.colors
+    const colorData = colorsJSON.find(c => c.id === stamp.id);
+    stamp.colors = colorData ? { colorData: colorData.colorData } : null;
   });
 
   // update allStamps after merging
@@ -613,18 +616,17 @@ const updateColors = (data) => {
 }
 
 const updateFeaturedImg = (data) => {
-  // update the stamp highlight image
-  const img = document.querySelector("#stamp-highlight-image");
-  img.src = "";
-  img.alt = "";
+  // update the stamp highlight canvas
+  const canvas = document.querySelector("#stamp-highlight-canvas");
+  const container = document.querySelector(".stamp-image-container");
+  const ctx = canvas.getContext('2d');
   
-  // Remove all aspect ratio classes
-  img.classList.remove("horizontal-stamp-thumbnail");
-  img.classList.remove("tall-stamp-thumbnail");
-  img.classList.remove("square-stamp-thumbnail");
-  img.classList.remove("wide-stamp-thumbnail");
-  img.classList.remove("extra-wide-stamp-thumbnail");
-  img.classList.remove("widest-stamp-thumbnail");
+  // Clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Set canvas size to match container
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
 
   // Use the featured stamp that was already determined in groupAndDisplayData
   const featuredStamp = state.featuredStamp;
@@ -637,25 +639,82 @@ const updateFeaturedImg = (data) => {
   const stampDecade = featuredStamp.decade || state.selectedDecade;
   const hasLocalImage = ids[stampDecade] === featuredStamp.id;
 
-  let aspectRatioClass = featuredStamp.aspectRatio;
+  // Create an image object to load the stamp
+  const tempImg = new Image();
+  tempImg.crossOrigin = "Anonymous"; // Enable CORS if needed
+  
+  // Determine image source
   if (hasLocalImage) {
-    img.src = images[stampDecade];
-    img.alt = titles[stampDecade];
-
-    if (stampDecade == 1800 || stampDecade == 1890) {
-      aspectRatioClass = "horizontal";
-    }
-
+    tempImg.src = images[stampDecade];
   } else {
     const imgSizeParam = "max";
-    const imgSizeValue = 400;
-    img.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
-    img.alt = featuredStamp.title || "Featured stamp";
+    const imgSizeValue = 800; // Request larger image for better quality
+    tempImg.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
   }
-
-  if (!!aspectRatioClass) {
-    img.classList.add(`${aspectRatioClass}-stamp-thumbnail`);
-  }
+  
+  // When image loads, draw it to canvas (with cropping if detection data exists)
+  tempImg.onload = function() {
+    // Check if we have detection data to crop
+    if (featuredStamp.detected && featuredStamp.detected.length > 0 && !hasLocalImage) {
+      // Get highest scored detection box
+      const highestScored = featuredStamp.detected[0];
+      const [x1, y1, x2, y2] = highestScored.box;
+      
+      // Calculate detection box in pixel coordinates
+      const sourceX = x1 * tempImg.width;
+      const sourceY = y1 * tempImg.height;
+      const sourceWidth = (x2 - x1) * tempImg.width;
+      const sourceHeight = (y2 - y1) * tempImg.height;
+      
+      // Calculate how to fit the detection box into the canvas while maintaining aspect ratio
+      const sourceAspect = sourceWidth / sourceHeight;
+      const canvasAspect = canvas.width / canvas.height;
+      
+      let destX = 0, destY = 0, destWidth = canvas.width, destHeight = canvas.height;
+      
+      if (sourceAspect > canvasAspect) {
+        // Source is wider - fit to width, center vertically
+        destHeight = canvas.width / sourceAspect;
+        destY = (canvas.height - destHeight) / 2;
+      } else {
+        // Source is taller - fit to height, center horizontally
+        destWidth = canvas.height * sourceAspect;
+        destX = (canvas.width - destWidth) / 2;
+      }
+      
+      // Draw the cropped portion of the image
+      ctx.drawImage(
+        tempImg,
+        sourceX, sourceY, sourceWidth, sourceHeight,  // Source rectangle (detection box)
+        destX, destY, destWidth, destHeight            // Destination rectangle (canvas)
+      );
+      
+      console.log(`Cropped: detection=[${x1.toFixed(3)}, ${y1.toFixed(3)}, ${x2.toFixed(3)}, ${y2.toFixed(3)}], source=${sourceWidth.toFixed(0)}x${sourceHeight.toFixed(0)}px, canvas=${canvas.width}x${canvas.height}px`);
+    } else {
+      // No detection data - draw full image
+      const imgAspect = tempImg.width / tempImg.height;
+      const canvasAspect = canvas.width / canvas.height;
+      
+      let destX = 0, destY = 0, destWidth = canvas.width, destHeight = canvas.height;
+      
+      if (imgAspect > canvasAspect) {
+        // Image is wider - fit to height, center horizontally
+        destWidth = canvas.height * imgAspect;
+        destX = (canvas.width - destWidth) / 2;
+      } else {
+        // Image is taller - fit to width, center vertically
+        destHeight = canvas.width / imgAspect;
+        destY = (canvas.height - destHeight) / 2;
+      }
+      
+      // Draw the full image
+      ctx.drawImage(tempImg, destX, destY, destWidth, destHeight);
+    }
+  };
+  
+  tempImg.onerror = function() {
+    console.error('Failed to load image:', tempImg.src);
+  };
 }
 
 const updateStampsCount = (data) => {
