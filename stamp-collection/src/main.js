@@ -36,6 +36,7 @@ let state = {
 // for the selected decade, materials, and colors update the stamps and decades
 const getFilteredStampData = () => {
   const { selectedDecade, stamps, materials, words, colors } = state;
+  let hasActiveFilters = false;
 
   // TODO add decade updating and use stamps rather than allStamps but use this to start before scroll is functioning
   let filteredStamps = allStamps.filter(s => s.decade === selectedDecade);
@@ -46,6 +47,7 @@ const getFilteredStampData = () => {
 
   // Apply each filter type if any are selected
   if (selectedMaterials.length > 0) {
+    hasActiveFilters = true;
     filteredStamps = filteredStamps.filter(stamp =>
       selectedMaterials.every(mat =>
         stamp.materials.some(m => m.toLowerCase() === mat.toLowerCase())
@@ -54,6 +56,7 @@ const getFilteredStampData = () => {
   }
 
   if (selectedWords.length > 0) {
+    hasActiveFilters = true;
     filteredStamps = filteredStamps.filter(stamp => {
       const title = stamp.title.toLowerCase();
       const desc = stamp.description.toLowerCase();
@@ -74,11 +77,33 @@ const getFilteredStampData = () => {
     state.words.forEach(w => w.selected = false);
 
     filteredStamps = allStamps.filter(s => s.decade === selectedDecade);
+    hasActiveFilters = false;
   }
 
   state.stamps = filteredStamps;
-  
+
+
+  const resetFiltersButton = document.getElementById("reset-filters");
+  if (hasActiveFilters) {
+    // Show the reset filters button
+    resetFiltersButton.style.display = "block";
+    resetFiltersButton.onclick = () => {
+      resetFilters();
+    };
+  } else {
+    // Hide the reset filters button
+    resetFiltersButton.style.display = "none";
+  }
+
   return filteredStamps;
+}
+
+const resetFilters = () => {
+  state.materials.forEach(m => m.selected = false);
+  state.words.forEach(w => w.selected = false);
+  state.colors.forEach(c => c.selected = false);
+
+  groupAndDisplayData();
 }
 
 function findBucketForTheme(theme) {

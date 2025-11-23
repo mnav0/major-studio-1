@@ -114,6 +114,7 @@ p a:hover {
   padding: 0.25em 3em;
   cursor: pointer;
   margin-top: 1em;
+  border-radius: 2px;
 }
 
 #entry-button:hover {
@@ -268,7 +269,7 @@ p a:hover {
 }
 
 .stamp-image-container {
-  height: 20em;
+  height: 17.5em;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -291,7 +292,7 @@ p a:hover {
 
 .stamp-highlight-thumbnail {
   max-width: 100%;
-  max-height: 20em;
+  max-height: 17.5em;
   height: auto !important;
   width: auto !important;
   object-fit: contain;
@@ -493,4 +494,13 @@ p a:hover {
 .selected-word {
   background-color: var(--color-primary-dark);
   color: var(--color-primary-light);
+}
+
+#reset-filters {
+  border: 1px solid var(--color-primary-dark);
+  border-radius: 2px;
+  padding: 0.25em;
+  width: 100%;
+  margin-top: 1em;
+  display: none;
 }
