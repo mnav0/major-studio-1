@@ -503,4 +503,5 @@ p a:hover {
   width: 100%;
   margin-top: 1em;
   display: none;
+  cursor: pointer;
 }

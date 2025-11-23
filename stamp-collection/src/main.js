@@ -14,6 +14,7 @@ import { getColorsForDecadeAndTheme } from "./data/color-analyzer.js";
 
 // constant to store initial data from fetch
 let allStamps = [];
+let allDecades = [];
 
 // to use as state variables and pull from to update filtering
 let state = {
@@ -35,11 +36,10 @@ let state = {
 
 // for the selected decade, materials, and colors update the stamps and decades
 const getFilteredStampData = () => {
-  const { selectedDecade, stamps, materials, words, colors } = state;
+  const { stamps, materials, words, colors } = state;
   let hasActiveFilters = false;
 
-  // TODO add decade updating and use stamps rather than allStamps but use this to start before scroll is functioning
-  let filteredStamps = allStamps.filter(s => s.decade === selectedDecade);
+  let filteredStamps = allStamps;
 
   // Get currently selected filters
   const selectedMaterials = materials.filter(m => m.selected).map(m => m.name);
@@ -66,22 +66,7 @@ const getFilteredStampData = () => {
     });
   }
 
-  if (filteredStamps.length === 0) {
-    // Clear material selections
-    state.materials.forEach(m => m.selected = false);
-    document.querySelectorAll("#featured-materials .selected-word").forEach(el => {
-      el.classList.remove("selected-word");
-    });
-    
-    // Clear word selections
-    state.words.forEach(w => w.selected = false);
-
-    filteredStamps = allStamps.filter(s => s.decade === selectedDecade);
-    hasActiveFilters = false;
-  }
-
   state.stamps = filteredStamps;
-
 
   const resetFiltersButton = document.getElementById("reset-filters");
   if (hasActiveFilters) {
@@ -181,6 +166,7 @@ const getAspectRatio = (stamp) => {
 
   return stampRatio;
 }
+
 const fetchStampData = () => {
   getAndParseAllData().then(async (stampData) => {
     stampData.forEach((stamp) => {
@@ -197,10 +183,11 @@ const fetchStampData = () => {
     state.stamps = stampData;
 
     const grouped = groupByDecadeAndTheme(allStamps);
-    state.decades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
+    allDecades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
+    state.decades = allDecades; // Initially all decades are available
 
     setupEntryButton();
-    drawTimeSlider(state.decades);
+    drawTimeSlider(allDecades);
 
     // set title with the total number of stamps
     const titleText = document.querySelector("#data-title-text");
@@ -225,10 +212,11 @@ const fetchStampDataForDev = async () => {
   state.stamps = stampData;
 
   const grouped = groupByDecadeAndTheme(allStamps);
-  state.decades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
+  allDecades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
+  state.decades = allDecades; // Initially all decades are available
 
   setupEntryButton();
-  drawTimeSlider(state.decades);
+  drawTimeSlider(allDecades);
 
   // set title with the total number of stamps
   const titleText = document.querySelector("#data-title-text");
@@ -264,6 +252,17 @@ const enterHomepage = () => {
 
   const dataSection = document.querySelector("#data");
   dataSection.style.display = "none";
+}
+
+const updateTimeSliderVisibility = () => {
+  // Update tick visibility based on available decades
+  d3.selectAll("line.tick")
+    .style("opacity", d => state.decades.includes(d) ? 1 : 0);
+  
+  // Update tick area clickability
+  d3.selectAll("rect.tick-area")
+    .style("pointer-events", d => state.decades.includes(d) ? "auto" : "none")
+    .style("cursor", d => state.decades.includes(d) ? "pointer" : "default");
 }
 
 const drawTimeSlider = (decades) => {
@@ -516,7 +515,7 @@ const updateHistory = () => {
     return state.stamps.some(stamp => {
       const title = stamp.title.toLowerCase();
       const desc = stamp.description.toLowerCase();
-      return wordRegex.test(title) || wordRegex.test(desc);
+      return stamp.decade === state.selectedDecade && (wordRegex.test(title) || wordRegex.test(desc));
     });
   };
 
@@ -928,7 +927,17 @@ const groupAndDisplayData = () => {
   const filteredStamps = getFilteredStampData();
   const grouped = groupByDecadeAndTheme(filteredStamps);
 
-  const flattened = flattenGroupedData(grouped);
+  // Update available decades from grouped data
+  const availableDecades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
+  const hasActiveFilters = state.materials.some(m => m.selected) || state.words.some(w => w.selected);
+  
+  state.decades = hasActiveFilters ? availableDecades : allDecades;
+  
+  updateTimeSliderVisibility();
+
+  const groupedForDecade = { [state.selectedDecade]: grouped[state.selectedDecade] } || {};
+
+  const flattened = flattenGroupedData(groupedForDecade);
   const dataToDisplay = flattened.sort((a, b) => b.count - a.count);
 
   const currFeaturedStamp = state.featuredStamp;
