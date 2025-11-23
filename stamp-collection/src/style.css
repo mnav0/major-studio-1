@@ -110,10 +110,14 @@ p a:hover {
 #entry-button {
   background-color: var(--color-primary-light);
   color: var(--color-primary-dark);
-  border: 1.5px solid var(--color-primary-dark);
-  padding: 0.5em 3em;
+  border: 1px solid var(--color-primary-dark);
+  padding: 0.25em 3em;
   cursor: pointer;
   margin-top: 1em;
+}
+
+#entry-button:hover {
+  background-color: var(--color-middle);
 }
 
 .intro-heading {
@@ -268,7 +272,9 @@ p a:hover {
   overflow: hidden;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   cursor: pointer;
+  position: relative;
 }
 
 .first-stamp-image-container {
@@ -283,11 +289,14 @@ p a:hover {
   bottom: 0;
 }
 
-.stamp-thumbnail {
-  position: relative;
+.stamp-highlight-thumbnail {
   max-width: 100%;
-  max-height: 100%;
-  display: block;
+  max-height: 20em;
+  height: auto !important;
+  width: auto !important;
+  object-fit: contain;
+  flex-shrink: 0;
+  /* position: absolute; */
 }
 
 /* Canvas-specific styling */
@@ -297,9 +306,10 @@ p a:hover {
   display: block;
 }
 
-.horizontal-stamp-thumbnail {
-  margin-top: 1.75em;
-  height: auto;
+.horizontal-stamp-thumbnail, 
+.wide-stamp-thumbnail, 
+.widest-stamp-thumbnail {
+  margin-top: 2em;
 }
 
 #entry-button {

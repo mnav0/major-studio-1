@@ -1,18 +1,18 @@
 import * as d3 from "d3";
 import { themeBuckets } from "./constants/themes.js";
 import { colors } from "./constants/colors.js";
-import { historicalContext, postalContext } from "./constants/context.js";
+import { historicalContext } from "./constants/context.js";
 import { images, titles, ids } from "./constants/images.js";
 import stampsJSON from "./data/stamps.json" assert { type: "json" };
 import embeddingsJSON from "./data/embeddings.json" assert { type: "json" };
-import detectedJSON from "./data/detected.json" assert { type: "json" };
+import detectedJSON from "./data/detected-all.json" assert { type: "json" };
 import colorsJSON from "./data/colors.json" assert { type: "json" };
 import { getAndParseAllData } from "./fetch-data.js";
 import contextRegex from "./constants/text.js";
 import { processInfo } from "./constants/process-info.js";
 import { getColorsForDecadeAndTheme } from "./data/color-analyzer.js";
 
-// constant, doesn't change with state
+// constant to store initial data from fetch
 let allStamps = [];
 
 // to use as state variables and pull from to update filtering
@@ -57,7 +57,7 @@ const getFilteredStampData = () => {
     filteredStamps = filteredStamps.filter(stamp => {
       const title = stamp.title.toLowerCase();
       const desc = stamp.description.toLowerCase();
-      return selectedWords.some(word =>
+      return selectedWords.every(word =>
         title.includes(word.toLowerCase()) || desc.includes(word.toLowerCase())
       );
     });
@@ -615,18 +615,11 @@ const updateColors = (data) => {
   }
 }
 
-const updateFeaturedImg = (data) => {
-  // update the stamp highlight canvas
-  const canvas = document.querySelector("#stamp-highlight-canvas");
+const updateFeaturedImg = () => {
   const container = document.querySelector(".stamp-image-container");
-  const ctx = canvas.getContext('2d');
   
-  // Clear the canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // Set canvas size to match container
-  canvas.width = container.clientWidth;
-  canvas.height = container.clientHeight;
+  // Clear any existing content
+  container.innerHTML = "";
 
   // Use the featured stamp that was already determined in groupAndDisplayData
   const featuredStamp = state.featuredStamp;
@@ -639,26 +632,104 @@ const updateFeaturedImg = (data) => {
   const stampDecade = featuredStamp.decade || state.selectedDecade;
   const hasLocalImage = ids[stampDecade] === featuredStamp.id;
 
+
+   // For preprocessed stamps with local images, use <img> tag
+  if (hasLocalImage) {
+    const img = document.createElement('img');
+    img.id = 'stamp-highlight-image';
+    img.className = 'stamp-highlight-thumbnail';
+    img.src = images[stampDecade];
+    img.alt = titles[stampDecade];
+    
+    // Apply aspect ratio class for proper styling
+    const aspectRatioClass = state.stamps.find(s => s.id === featuredStamp.id)?.aspectRatio;
+    if (!!aspectRatioClass) {
+      img.classList.add(`${aspectRatioClass}-stamp-thumbnail`);
+    }
+    
+    container.appendChild(img);
+    return;
+  }
+
+  // For stamps with detection data, use canvas
+  const canvas = document.createElement('canvas');
+  canvas.id = 'stamp-highlight-canvas';
+  canvas.width = container.clientWidth;
+  canvas.height = container.clientHeight;
+  container.appendChild(canvas);
+  
+  const ctx = canvas.getContext('2d');
+
   // Create an image object to load the stamp
   const tempImg = new Image();
-  tempImg.crossOrigin = "Anonymous"; // Enable CORS if needed
+  tempImg.crossOrigin = "Anonymous";
   
-  // Determine image source
-  if (hasLocalImage) {
-    tempImg.src = images[stampDecade];
-  } else {
-    const imgSizeParam = "max";
-    const imgSizeValue = 800; // Request larger image for better quality
-    tempImg.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
-  }
+  const imgSizeParam = "max";
+  const imgSizeValue = 800;
+  tempImg.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+  
   
   // When image loads, draw it to canvas (with cropping if detection data exists)
   tempImg.onload = function() {
     // Check if we have detection data to crop
-    if (featuredStamp.detected && featuredStamp.detected.length > 0 && !hasLocalImage) {
-      // Get highest scored detection box
-      const highestScored = featuredStamp.detected[0];
-      const [x1, y1, x2, y2] = highestScored.box;
+    let detectedData = featuredStamp.detected || [];
+    if (detectedData.length > 0 && !hasLocalImage) {
+      // look at the differences between boxes and either choose the first one if the differences are large (> 1.0 for score)
+      // or the next cluster if the differences are small
+      let bestDetection = detectedData[0];
+
+      // if selected decade is > 1800, filter out embossed and postmark
+      // if selected decade is == 1800, filter for ONLY embossed
+      if (state.selectedDecade > 1800) {
+        detectedData = detectedData.filter(d => d.label !== 'postmark' && d.label !== 'embossed');
+      } else if (state.selectedDecade === 1800) {
+        detectedData = detectedData.filter(d => d.type === 'embossed');
+      }
+
+      if (detectedData.length === 0) {
+        // If filtering removed everything, use the original best
+        detectedData = featuredStamp.detected;
+        bestDetection = detectedData[0];
+      } else {
+        // Find clusters: group detections that are within 0.1 score of each other
+        const scoreDiffThreshold = 0.1;
+        const highestScore = detectedData[0].score;
+        let largestCluster = [];
+        
+        for (let i = 0; i < detectedData.length; i++) {
+          let cluster = [detectedData[i]];
+          
+          // Find all detections within scoreDiffThreshold of this one
+          for (let j = i + 1; j < detectedData.length; j++) {
+            if (Math.abs(detectedData[i].score - detectedData[j].score) <= scoreDiffThreshold) {
+              cluster.push(detectedData[j]);
+            }
+          }
+          
+          // Keep track of the largest cluster
+          if (cluster.length > largestCluster.length) {
+            largestCluster = cluster;
+          }
+        }
+        
+        // If we found a cluster of 3+, use the highest scored one from that cluster
+        if (largestCluster.length >= 3) {
+          const clusterHighestScore = largestCluster[0].score;
+          
+          // Only use cluster if it's within 0.3 of the absolute highest score
+          if (highestScore - clusterHighestScore <= 0.3) {
+            bestDetection = largestCluster[0];
+          } else {
+            // Cluster is too far from highest, use the highest scored detection
+            bestDetection = detectedData[0];
+           }
+        } else {
+          // No cluster found, use the highest scored detection
+          bestDetection = detectedData[0];
+        }
+      }
+
+      const [x1, y1, x2, y2] = bestDetection.box;
       
       // Calculate detection box in pixel coordinates
       const sourceX = x1 * tempImg.width;
@@ -673,9 +744,16 @@ const updateFeaturedImg = (data) => {
       let destX = 0, destY = 0, destWidth = canvas.width, destHeight = canvas.height;
       
       if (sourceAspect > canvasAspect) {
-        // Source is wider - fit to width, center vertically
+        // Source is wider - fit to width
         destHeight = canvas.width / sourceAspect;
-        destY = (canvas.height - destHeight) / 2;
+
+        // center vertically unless the aspect ratio is very wide
+        if (sourceAspect < 1.2) {
+          // debugger;
+          destY = (canvas.height - destHeight) / 2;
+        } else {
+          destY = 32;
+        }
       } else {
         // Source is taller - fit to height, center horizontally
         destWidth = canvas.height * sourceAspect;
@@ -688,8 +766,6 @@ const updateFeaturedImg = (data) => {
         sourceX, sourceY, sourceWidth, sourceHeight,  // Source rectangle (detection box)
         destX, destY, destWidth, destHeight            // Destination rectangle (canvas)
       );
-      
-      console.log(`Cropped: detection=[${x1.toFixed(3)}, ${y1.toFixed(3)}, ${x2.toFixed(3)}, ${y2.toFixed(3)}], source=${sourceWidth.toFixed(0)}x${sourceHeight.toFixed(0)}px, canvas=${canvas.width}x${canvas.height}px`);
     } else {
       // No detection data - draw full image
       const imgAspect = tempImg.width / tempImg.height;
@@ -711,10 +787,6 @@ const updateFeaturedImg = (data) => {
       ctx.drawImage(tempImg, destX, destY, destWidth, destHeight);
     }
   };
-  
-  tempImg.onerror = function() {
-    console.error('Failed to load image:', tempImg.src);
-  };
 }
 
 const updateStampsCount = (data) => {
@@ -735,7 +807,7 @@ const updateHeading = (data) => {
 
   updateMaterials(data);
 
-  updateFeaturedImg(data);
+  updateFeaturedImg();
 }
 
 const toggleAboutInfo = (n) => {
@@ -792,13 +864,15 @@ const getFeaturedStamp = (dataToDisplay) => {
   const defaultStamp = images[state.selectedDecade];
   const defaultFeaturedInStamps = state.stamps.find(s => s.id === defaultStampId);
 
+  const topTheme = dataToDisplay[0];
+
   if (defaultFeaturedInStamps) {
     return defaultFeaturedInStamps;
-  } else if (currFeaturedInStamps) {
-    return currFeaturedStamp;
   } else {
-    const topTheme = dataToDisplay[0];
-    if (topTheme && topTheme.stamps && topTheme.stamps.length > 0) {
+    const currFeaturedInTopTheme = topTheme?.stamps.find(s => s.id === currFeaturedStamp.id);
+    if (currFeaturedInStamps && currFeaturedInTopTheme) {
+      return currFeaturedStamp;
+    } else if (topTheme?.stamps.length > 0) {
       return topTheme.stamps[0];
     }
   }
