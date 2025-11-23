@@ -660,6 +660,23 @@ const updateFeaturedImg = () => {
   
   const ctx = canvas.getContext('2d');
 
+  // create a new div to fill with the top color for loading
+  const loadingDiv = document.createElement('div');
+  loadingDiv.classList.add('featured-stamp-loading');
+  container.appendChild(loadingDiv);
+
+  // Show loading state with top color from stamp's color data
+  if (featuredStamp.colors && featuredStamp.colors.colorData?.length > 0) {
+    const topColor = featuredStamp.colors.colorData.sort((a, b) => b.population - a.population)[0];
+    loadingDiv.style.backgroundColor = topColor.hex || colors.light;
+  }
+
+  // Force a reflow to ensure the initial opacity: 0 state is rendered
+  // before adding show-loading class
+  loadingDiv.offsetHeight;
+  
+  loadingDiv.classList.add('show-loading');
+
   // Create an image object to load the stamp
   const tempImg = new Image();
   tempImg.crossOrigin = "Anonymous";
@@ -749,7 +766,6 @@ const updateFeaturedImg = () => {
 
         // center vertically unless the aspect ratio is very wide
         if (sourceAspect < 1.2) {
-          // debugger;
           destY = (canvas.height - destHeight) / 2;
         } else {
           destY = 32;
@@ -759,7 +775,6 @@ const updateFeaturedImg = () => {
         destWidth = canvas.height * sourceAspect;
         destX = (canvas.width - destWidth) / 2;
       }
-      
       // Draw the cropped portion of the image
       ctx.drawImage(
         tempImg,
@@ -782,10 +797,12 @@ const updateFeaturedImg = () => {
         destHeight = canvas.width / imgAspect;
         destY = (canvas.height - destHeight) / 2;
       }
-      
       // Draw the full image
       ctx.drawImage(tempImg, destX, destY, destWidth, destHeight);
     }
+
+
+    loadingDiv.classList.remove('show-loading');
   };
 }
 
@@ -798,7 +815,7 @@ const updateStampsCount = (data) => {
 }
 
 // when passed to here the data is already sorted by count descending and filtered by decade
-const updateHeading = (data) => {
+const updateHeading = (data, shouldUpdateFeatured = true) => {
   updateStampsCount(data);
   updateColors(data);
 
@@ -807,7 +824,9 @@ const updateHeading = (data) => {
 
   updateMaterials(data);
 
-  updateFeaturedImg();
+  if (shouldUpdateFeatured) {
+    updateFeaturedImg();
+  }
 }
 
 const toggleAboutInfo = (n) => {
@@ -887,8 +906,16 @@ const groupAndDisplayData = () => {
   const flattened = flattenGroupedData(grouped);
   const dataToDisplay = flattened.sort((a, b) => b.count - a.count);
 
+  const currFeaturedStamp = state.featuredStamp;
+
   // Store the featured stamp in state
-  state.featuredStamp = getFeaturedStamp(dataToDisplay);
+  const newFeaturedStamp = getFeaturedStamp(dataToDisplay);
+
+  let shouldUpdateFeatured = false;
+  if (currFeaturedStamp !== newFeaturedStamp) {
+    shouldUpdateFeatured = true;
+    state.featuredStamp = newFeaturedStamp;
+  }
 
   // Sort each theme group based on similarity to the featured stamp
   flattened.forEach(group => {
@@ -905,7 +932,7 @@ const groupAndDisplayData = () => {
   const barsContainer = document.querySelector("#bars-container");
   barsContainer.innerHTML = "";
 
-  updateHeading(dataToDisplay);
+  updateHeading(dataToDisplay, shouldUpdateFeatured);
   drawBars(dataToDisplay);
 }
 
