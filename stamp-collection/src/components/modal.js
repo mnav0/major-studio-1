@@ -1,3 +1,5 @@
+import { colors } from "../constants/colors.js";
+
 /**
  * Toggle stamp modal visibility and populate with stamp data
  * @param {Object} stamp - Stamp object to display (null to close)
@@ -6,8 +8,12 @@
 export const toggleStampModal = (stamp, onClose) => {
   const modal = document.querySelector("#modal");
   const imageContainer = document.querySelector("#modal-image");
+  const loadingDiv = document.querySelector("#modal-loading-state");
 
   if (stamp) {
+    loadingDiv.style.backgroundColor = colors.light;
+    loadingDiv.style.opacity = "1";
+
     modal.style.display = "block";
 
     const imgSizeParam = "max";
@@ -40,4 +46,8 @@ export const toggleStampModal = (stamp, onClose) => {
       onClose();
     };
   }
+
+   setTimeout(() => {
+     loadingDiv.style.opacity = "0";
+   }, 1000);
 }
