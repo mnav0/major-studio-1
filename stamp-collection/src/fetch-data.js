@@ -15,6 +15,19 @@ const themesRegex = new RegExp(
   "gi"
 );
 
+/**
+ * Normalize material string to handle spacing variations
+ * e.g., "ink(dull red)" and "ink (dull red)" both become "ink (dull red)"
+ */
+function normalizeMaterial(material) {
+  return material
+    .trim()
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/\(\s*/g, ' (') // Ensure space before opening paren
+    .replace(/\s*\)/g, ')') // Remove space before closing paren
+    .replace(/\s+\(/g, ' ('); // Clean up any double spaces before parens
+}
+
 function extractMaterials(medium) {
   if (!medium) return [];
   
@@ -34,14 +47,14 @@ function extractMaterials(medium) {
       
       // If we just closed all parens and next char is a space, this might be a split point
       if (parenDepth === 0 && medium[i + 1] === ' ' && i + 1 < medium.length) {
-        materials.push(current.trim());
+        materials.push(normalizeMaterial(current));
         current = '';
         i++; // Skip the space
       }
     } else if ((char === ';' || char === '/') && parenDepth === 0) {
       // Split on ; or / only if not inside parentheses
       if (current.trim()) {
-        materials.push(current.trim());
+        materials.push(normalizeMaterial(current));
       }
       current = '';
     } else {
@@ -51,7 +64,7 @@ function extractMaterials(medium) {
   
   // Don't forget the last material
   if (current.trim()) {
-    materials.push(current.trim());
+    materials.push(normalizeMaterial(current));
   }
   
   return materials;
