@@ -16,29 +16,44 @@ const themesRegex = new RegExp(
 );
 
 function extractMaterials(medium) {
-  // convert medium into an array of materials, splitting on ; or /
-  const firstMaterials = medium.split(/;|\//).map(m => m.trim());
-  // run through materials and if there are any ") " not at the end of a string, split that as well
+  if (!medium) return [];
+  
   const materials = [];
-  firstMaterials.forEach(m => {
-    if (m.includes(") ")) {
-      const splitMaterials = m.split(") ").map(sm => {
-        // if there is a beginning parentheses missing after the split, add it back
-        // but don't return if materials already includes this
-        let processed = sm;
-        if (!sm.endsWith(")") && sm.includes("(")) {
-          processed = sm + ")";
-        }
-
-        return processed.trim();
-      });
-
-      materials.push(...splitMaterials);
+  let current = '';
+  let parenDepth = 0;
+  
+  for (let i = 0; i < medium.length; i++) {
+    const char = medium[i];
+    
+    if (char === '(') {
+      parenDepth++;
+      current += char;
+    } else if (char === ')') {
+      parenDepth--;
+      current += char;
+      
+      // If we just closed all parens and next char is a space, this might be a split point
+      if (parenDepth === 0 && medium[i + 1] === ' ' && i + 1 < medium.length) {
+        materials.push(current.trim());
+        current = '';
+        i++; // Skip the space
+      }
+    } else if ((char === ';' || char === '/') && parenDepth === 0) {
+      // Split on ; or / only if not inside parentheses
+      if (current.trim()) {
+        materials.push(current.trim());
+      }
+      current = '';
     } else {
-      materials.push(m);
+      current += char;
     }
-  });
-
+  }
+  
+  // Don't forget the last material
+  if (current.trim()) {
+    materials.push(current.trim());
+  }
+  
   return materials;
 }
 

@@ -3,65 +3,127 @@
  */
 
 /**
- * Extract all colors with their population counts from stamps
+ * Calculate color distance using Euclidean distance in RGB space
+ * Returns a value between 0 (identical) and ~441.67 (opposite corners of RGB cube)
+ * @param {Array} rgb1 - First color as [r, g, b] array
+ * @param {Array} rgb2 - Second color as [r, g, b] array
+ * @returns {number} Distance between colors
+ */
+function colorDistance(rgb1, rgb2) {
+  const rDiff = rgb1[0] - rgb2[0];
+  const gDiff = rgb1[1] - rgb2[1];
+  const bDiff = rgb1[2] - rgb2[2];
+  return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
+}
+
+/**
+ * Check if two colors are similar within a tolerance threshold
+ * @param {Array} rgb1 - First RGB array [r, g, b]
+ * @param {Array} rgb2 - Second RGB array [r, g, b]
+ * @param {number} threshold - Maximum distance to consider colors similar (default: 50)
+ *                             Typical values: 30 (strict), 50 (moderate), 100 (loose)
+ * @returns {boolean} True if colors are similar
+ */
+export function areColorsSimilar(rgb1, rgb2, threshold = 50) {
+  return colorDistance(rgb1, rgb2) <= threshold;
+}
+
+/**
+ * Check if a stamp contains ALL selected colors (AND logic, not OR)
+ * @param {Object} stamp - Stamp object with colors.colorData
+ * @param {Array} selectedColorObjects - Array of selected color objects with {rgb} property
+ * @param {number} threshold - Color similarity threshold
+ * @returns {boolean} True if stamp contains ALL selected colors
+ */
+export function stampHasSimilarColors(stamp, selectedColorObjects, threshold = 50) {
+  if (!stamp.colors?.colorData) return false;
+  
+  // Stamp must contain ALL selected colors (AND logic)
+  return selectedColorObjects.every(selectedColor => {
+    if (!selectedColor.rgb) return false;
+    
+    // Check if stamp has at least one color similar to this selected color
+    return stamp.colors.colorData.some(colorObj => 
+      colorObj.rgb && areColorsSimilar(selectedColor.rgb, colorObj.rgb, threshold)
+    );
+  });
+}
+
+/**
+ * Extract all colors with their population counts and RGB data from stamps
  */
 function extractColorsFromStamps(stamps) {
-  const colorMap = new Map(); // Map of hex -> total population
+  const colorMap = new Map(); // Map of hex -> {population, rgb}
   
   stamps.forEach(stamp => {
     if (stamp.colors && Array.isArray(stamp.colors.colorData)) {
       stamp.colors.colorData.forEach(colorObj => {
-        if (colorObj.hex && colorObj.population !== undefined) {
-          const currentPop = colorMap.get(colorObj.hex) || 0;
-          colorMap.set(colorObj.hex, currentPop + colorObj.population);
+        if (colorObj.hex && colorObj.population !== undefined && colorObj.rgb) {
+          const existing = colorMap.get(colorObj.hex);
+          if (existing) {
+            existing.population += colorObj.population;
+          } else {
+            colorMap.set(colorObj.hex, {
+              hex: colorObj.hex,
+              population: colorObj.population,
+              rgb: colorObj.rgb
+            });
+          }
         }
       });
     }
   });
   
-  // Convert map to array of {hex, population} and sort by population
-  return Array.from(colorMap.entries())
-    .map(([hex, population]) => ({ hex, population }))
+  // Convert map to array and sort by population
+  return Array.from(colorMap.values())
     .sort((a, b) => b.population - a.population);
 }
 
 /**
- * Get top colors with distribution skewed toward more frequent colors
- * Uses exponential scaling to favor dominant colors while showing variety
- * Only samples from the top 85% of colors to avoid rare outliers
+ * Get top colors ensuring all returned colors are visually distinct from each other
  * @param {Array} stamps - Array of stamp objects with color data
  * @param {number} numColors - Number of colors to return (default: 5)
- * @returns {Array} Array of hex color strings representing the distribution
+ * @param {number} minDistance - Minimum RGB distance between colors (default: 50)
+ * @returns {Array} Array of color objects with {hex, rgb} properties
  */
-export function getTopColors(stamps, numColors = 5) {
-  // Extract all colors with their populations from stamps
+export function getTopColors(stamps, numColors = 5, minDistance = 50) {
   const colorsByPopulation = extractColorsFromStamps(stamps);
-  
-  if (colorsByPopulation.length === 0) {
-    return [];
-  }
-  
-  // If we have fewer colors than requested, return all of them
-  if (colorsByPopulation.length <= numColors) {
-    return colorsByPopulation.map(colorObj => colorObj.hex);
-  }
+  if (colorsByPopulation.length === 0) return [];
 
-  // Only sample from the top 85% of colors to avoid rare outliers
-  const maxRange = Math.floor(colorsByPopulation.length * 0.85);
-  const sampleRange = Math.max(maxRange, numColors); // At least enough for numColors
+  const selectedColors = [];
   
-  const selectedIndices = [];
-  
-  for (let i = 0; i < numColors; i++) {
-    // Use exponential scaling within the limited range
-    // This keeps us in the visually dominant colors
-    const ratio = i / (numColors - 1);
-    const position = Math.floor(Math.pow(ratio, 2.5) * (sampleRange - 1));
-    selectedIndices.push(position);
+  // Iterate through colors by popularity, selecting distinct ones
+  for (const candidate of colorsByPopulation) {
+    if (selectedColors.length >= numColors) break;
+    
+    // Check if this color is distinct from all already-selected colors
+    const isDistinct = selectedColors.every(selected => 
+      colorDistance(candidate.rgb, selected.rgb) >= minDistance
+    );
+    
+    if (isDistinct) {
+      selectedColors.push(candidate);
+    }
   }
   
-  // Return colors at the calculated positions
-  return selectedIndices.map(index => colorsByPopulation[index].hex);
+  // If we still need more colors, relax min distance and retry
+  if (selectedColors.length < numColors) {
+    const relaxedDistance = minDistance * 0.75;
+    for (const candidate of colorsByPopulation) {
+      if (selectedColors.length >= numColors) break;
+      if (selectedColors.some(s => s.hex === candidate.hex)) continue;
+      
+      const isDistinct = selectedColors.every(selected => 
+        colorDistance(candidate.rgb, selected.rgb) >= relaxedDistance
+      );
+      
+      if (isDistinct) {
+        selectedColors.push(candidate);
+      }
+    }
+  }
+  
+  return selectedColors.map(({ hex, rgb }) => ({ hex, rgb }));
 }
 
 /**
@@ -70,7 +132,7 @@ export function getTopColors(stamps, numColors = 5) {
  * @param {number} decade - Target decade
  * @param {string} theme - Target theme
  * @param {number} topN - Number of colors to return
- * @returns {Array} Array of hex color strings
+ * @returns {Array} Array of color objects with {hex, rgb} properties
  */
 export function getColorsForDecadeAndTheme(groupedData, decade, theme, topN = 5) {
   const group = groupedData.find(g => g.decade === decade && g.theme === theme);

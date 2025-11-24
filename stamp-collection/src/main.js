@@ -8,6 +8,7 @@ import { updateThemes, updateHistory, updateMaterials, updateColors } from "./co
 // utils
 import { groupByDecadeAndTheme, flattenGroupedData, distToStamp } from "./utils/helpers.js";
 import { fetchStampData as loadStampData } from "./utils/data-loader.js";
+import { stampHasSimilarColors } from "./utils/color-analyzer.js";
 
 // constants
 import { processInfo } from "./constants/process-info.js";
@@ -35,13 +36,14 @@ let state = {
 
 // filtering logic
 const getFilteredStampData = () => {
-  const { materials, words } = state;
+  const { materials, words, colors } = state;
   let hasActiveFilters = false;
   let filteredStamps = allStamps;
 
   // Get currently selected filters
   const selectedMaterials = materials.filter(m => m.selected).map(m => m.name);
   const selectedWords = words.filter(w => w.selected).map(w => w.text);
+  const selectedColorObjects = colors.filter(c => c.selected); // Keep full objects with {hex, rgb}
 
   // Apply material filters
   if (selectedMaterials.length > 0) {
@@ -63,6 +65,15 @@ const getFilteredStampData = () => {
         title.includes(word.toLowerCase()) || desc.includes(word.toLowerCase())
       );
     });
+  }
+
+  // Apply color filters with fuzzy matching using RGB data
+  if (selectedColorObjects.length > 0) {
+    hasActiveFilters = true;
+    const colorThreshold = 20;
+    filteredStamps = filteredStamps.filter(stamp => 
+      stampHasSimilarColors(stamp, selectedColorObjects, colorThreshold)
+    );
   }
 
   state.stamps = filteredStamps;
@@ -96,7 +107,9 @@ const groupAndDisplayData = () => {
 
   // Update available decades from grouped data
   const availableDecades = Object.keys(grouped).map(d => Number(d)).sort((a, b) => a - b);
-  const hasActiveFilters = state.materials.some(m => m.selected) || state.words.some(w => w.selected);
+  const hasActiveFilters = state.materials.some(m => m.selected) || 
+                           state.words.some(w => w.selected) || 
+                           state.colors.some(c => c.selected);
   
   state.decades = hasActiveFilters ? availableDecades : allDecades;
   
@@ -146,7 +159,7 @@ const groupAndDisplayData = () => {
  * Update all heading sections
  */
 const updateHeading = (data, shouldUpdateFeatured = true) => {
-  updateColors(data, state.selectedDecade);
+  updateColors(data, state, groupAndDisplayData);
   updateThemes(data);
   updateHistory(state, groupAndDisplayData);
   updateMaterials(data, state, groupAndDisplayData);

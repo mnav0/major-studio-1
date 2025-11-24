@@ -32,11 +32,8 @@ async function extractStampColors(stamp) {
 
 // Process stamps in batches to avoid overwhelming Vibrant.js
 export async function extractColorsForAllStamps(stampData, batchSize = 50, delayMs = 100) {
-  console.log(`Starting color extraction for ${stampData.length} stamps...`);
-  
   for (let i = 0; i < stampData.length; i += batchSize) {
     const batch = stampData.slice(i, i + batchSize);
-    console.log(`Processing batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(stampData.length / batchSize)}`);
     
     // Process batch in parallel
     const colorPromises = batch.map(stamp => extractStampColors(stamp));

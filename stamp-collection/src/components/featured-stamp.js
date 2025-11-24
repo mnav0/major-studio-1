@@ -67,7 +67,7 @@ export const updateFeaturedImg = (featuredStamp, state) => {
   tempImg.crossOrigin = "Anonymous";
   
   const imgSizeParam = "max";
-  const imgSizeValue = 800;
+  const imgSizeValue = 1200;
   tempImg.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
   
   tempImg.onload = function() {

@@ -142,26 +142,76 @@ export const updateMaterials = (data, state, onMaterialClick) => {
 /**
  * Update color swatches
  */
-export const updateColors = (data, selectedDecade) => {
+export const updateColors = (data, state, onColorClick) => {
   const swatches = document.querySelectorAll(".color-swatch");
+  
+  // Clear swatches visual state
   swatches.forEach(s => {
     s.style.backgroundColor = "transparent";
+    s.classList.remove("selected");
   });
 
   const topThemeGroup = data[0];
+  if (!topThemeGroup?.stamps) return;
+
+  const topColors = getColorsForDecadeAndTheme(
+    data, 
+    state.selectedDecade, 
+    topThemeGroup.theme, 
+    5
+  );
   
-  if (topThemeGroup && topThemeGroup.stamps) {
-    const topColors = getColorsForDecadeAndTheme(
-      data, 
-      selectedDecade, 
-      topThemeGroup.theme, 
-      5
-    );
-    
-    swatches.forEach((s, idx) => {
-      if (topColors[idx]) {
-        s.style.backgroundColor = topColors[idx];
+  // Build new color array, preserving positions of selected colors
+  const colorsToDisplay = new Array(5).fill(null);
+  
+  // Keep selected colors in their original positions
+  state.colors.forEach((color, idx) => {
+    if (color.selected && idx < 5) {
+      colorsToDisplay[idx] = { ...color };
+    }
+  });
+  
+  // Fill empty slots with new top colors (skip colors already selected)
+  let newColorIndex = 0;
+  for (let i = 0; i < 5; i++) {
+    if (colorsToDisplay[i] === null && newColorIndex < topColors.length) {
+      // Find next unused color
+      while (newColorIndex < topColors.length) {
+        const newColor = topColors[newColorIndex++];
+        const alreadyUsed = colorsToDisplay.some(c => c?.hex === newColor.hex);
+        
+        if (!alreadyUsed) {
+          colorsToDisplay[i] = { ...newColor, selected: false };
+          break;
+        }
       }
-    });
+    }
   }
+  
+  // Update state with non-null colors
+  state.colors = colorsToDisplay.filter(c => c !== null);
+  
+  // Render swatches
+  swatches.forEach((swatch, idx) => {
+    const color = colorsToDisplay[idx];
+    
+    if (color) {
+      swatch.style.backgroundColor = color.hex;
+      if (color.selected) swatch.classList.add("selected");
+      swatch.style.cursor = "pointer";
+      
+      swatch.onclick = () => {
+        const stateColor = state.colors.find(c => c.hex === color.hex);
+        if (stateColor) {
+          stateColor.selected = !stateColor.selected;
+          swatch.classList.toggle("selected");
+          onColorClick();
+        }
+      };
+    } else {
+      // No color - make non-interactive
+      swatch.style.cursor = "default";
+      swatch.onclick = null;
+    }
+  });
 }
