@@ -15,6 +15,33 @@ const themesRegex = new RegExp(
   "gi"
 );
 
+function extractMaterials(medium) {
+  // convert medium into an array of materials, splitting on ; or /
+  const firstMaterials = medium.split(/;|\//).map(m => m.trim());
+  // run through materials and if there are any ") " not at the end of a string, split that as well
+  const materials = [];
+  firstMaterials.forEach(m => {
+    if (m.includes(") ")) {
+      const splitMaterials = m.split(") ").map(sm => {
+        // if there is a beginning parentheses missing after the split, add it back
+        // but don't return if materials already includes this
+        let processed = sm;
+        if (!sm.endsWith(")") && sm.includes("(")) {
+          processed = sm + ")";
+        }
+
+        return processed.trim();
+      });
+
+      materials.push(...splitMaterials);
+    } else {
+      materials.push(m);
+    }
+  });
+
+  return materials;
+}
+
 function extractTheme(text) {
   if (!text) return null;
 
@@ -118,8 +145,7 @@ const parseObject = (objectData) => {
   const title = objectData.title || "";
   const medium = objectData.content.freetext.physicalDescription?.find((pd) => pd.label == "Medium")?.content || "";
 
-  // convert medium into an array of materials, splitting on ; or /
-  const materials = medium.split(/;|\//).map(m => m.trim());
+  const materials = extractMaterials(medium);
 
   // filter out covers of postage stamp proof that don't show the stamp itself
   const isEnvelope = /envelope/i.test(title); 
