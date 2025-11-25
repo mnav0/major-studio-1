@@ -1,5 +1,7 @@
+import scrollama from "scrollama";
+
 // components
-import { drawTimeSlider, updateTimeSliderVisibility } from "./components/time-slider.js";
+import { drawTimeSlider, updateTimeSliderVisibility, redrawCurrentDecadeIndicator } from "./components/time-slider.js";
 import { drawBars } from "./components/bars.js";
 import { toggleStampModal } from "./components/modal.js";
 import { updateFeaturedImg as updateFeaturedImgComponent, getFeaturedStamp as getFeaturedStampComponent } from "./components/featured-stamp.js";
@@ -16,6 +18,7 @@ import { processInfo } from "./constants/process-info.js";
 // state and data
 let allStamps = [];
 let allDecades = [];
+let scroller = null; // Scrollama instance
 
 let state = {
   selectedDecade: 1760,
@@ -31,7 +34,8 @@ let state = {
     isOpen: false,
     colIndex: null
   },
-  fullScreenStamp: null
+  fullScreenStamp: null,
+  isFiltering: false
 }
 
 // filtering logic
@@ -100,8 +104,24 @@ const resetFilters = () => {
   groupAndDisplayData();
 }
 
+/**
+ * Set min-height of decade sections to fill viewport (minus header)
+ */
+const setDecadeSectionHeights = () => {
+  const viewportHeight = window.innerHeight;
+  const header = document.querySelector('.data-heading');
+  const headerHeight = header ? header.offsetHeight : 0;
+  const minHeight = viewportHeight - headerHeight;
+  
+  document.querySelectorAll('.decade-section').forEach(section => {
+    section.style.minHeight = `${minHeight}px`;
+  });
+};
+
 // group and update the displayed data
 const groupAndDisplayData = () => {
+  state.isFiltering = true; // Set flag before changes
+  
   const filteredStamps = getFilteredStampData();
   const grouped = groupByDecadeAndTheme(filteredStamps);
 
@@ -113,52 +133,123 @@ const groupAndDisplayData = () => {
   
   state.decades = hasActiveFilters ? availableDecades : allDecades;
   
+  // If current decade not available, switch to first available
+  if (!state.decades.includes(state.selectedDecade)) {
+    state.selectedDecade = state.decades[0];
+  }
+  
   updateTimeSliderVisibility(state);
 
-  // Get data for selected decade only
-  const groupedForDecade = { [state.selectedDecade]: grouped[state.selectedDecade] || {} };
-  const flattened = flattenGroupedData(groupedForDecade);
-  const dataToDisplay = flattened.sort((a, b) => b.count - a.count);
+  // Flatten and sort by count
+  const flattened = flattenGroupedData(grouped);
+  const sortedByCount = flattened.sort((a, b) => b.count - a.count);
 
-  // Determine featured stamp
-  const currFeaturedStamp = state.featuredStamp;
-  const newFeaturedStamp = getFeaturedStampComponent(
-    dataToDisplay,
-    currFeaturedStamp,
-    state.stamps,
-    state.selectedDecade
-  );
-
-  let shouldUpdateFeatured = false;
-  if (currFeaturedStamp !== newFeaturedStamp) {
-    shouldUpdateFeatured = true;
-    state.featuredStamp = newFeaturedStamp;
-  }
-
-  // Sort stamps by similarity to featured stamp
-  flattened.forEach(group => {
-    group.stamps.sort((a, b) => {
-      if (a.embedding && b.embedding) {
-        const featuredEmbedding = state.featuredStamp.embedding;
-        return distToStamp(a, b, featuredEmbedding);
-      } else {
-        return 0;
-      }
-    });
+  // For each decade, determine featured stamp and sort stamps by similarity
+  const dataByDecade = {};
+  sortedByCount.forEach(group => {
+    if (!dataByDecade[group.decade]) {
+      dataByDecade[group.decade] = [];
+    }
+    dataByDecade[group.decade].push(group);
   });
 
-  // Update UI
+  // Sort stamps within each decade by featured stamp
+  Object.keys(dataByDecade).forEach(decade => {
+    const decadeData = dataByDecade[decade];
+    const featuredStamp = getFeaturedStampComponent(
+      decadeData,
+      null,
+      filteredStamps,
+      Number(decade)
+    );
+    
+    // Sort stamps within each theme by similarity to featured stamp
+    decadeData.forEach(group => {
+      group.stamps.sort((a, b) => {
+        if (a.embedding && b.embedding && featuredStamp?.embedding) {
+          return distToStamp(a, b, featuredStamp.embedding);
+        }
+        return 0;
+      });
+    });
+
+    // Store featured stamp for current decade
+    if (Number(decade) === state.selectedDecade) {
+      state.featuredStamp = featuredStamp;
+    }
+  });
+
+  // Render all decades
   const barsContainer = document.querySelector("#bars-container");
   barsContainer.innerHTML = "";
+  
+  state.decades.forEach(decade => {
+    const decadeData = dataByDecade[decade] || [];
+    if (decadeData.length > 0) {
+      drawBars(decadeData, [decade], handleStampClick);
+    }
+  });
 
-  updateHeading(dataToDisplay, shouldUpdateFeatured);
-  drawBars(dataToDisplay, handleStampClick);
+  // Set min-height on all decade sections to fill viewport
+  setDecadeSectionHeights();
+
+  // Update heading for currently selected decade
+  const currentDecadeData = dataByDecade[state.selectedDecade] || [];
+  if (currentDecadeData.length > 0) {
+    updateHeading(currentDecadeData, true);
+  }
+
+  // After rendering, scroll back to the selected decade
+  requestAnimationFrame(() => {
+    const newDecadeSection = document.querySelector(`#decade-${state.selectedDecade}`);
+    if (newDecadeSection) {
+      // Get the sticky header height
+      const header = document.querySelector('.data-heading');
+      const headerHeight = header ? header.offsetHeight : 0;
+      
+      // Scroll to top of decade section, accounting for sticky header
+      const sectionTop = newDecadeSection.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: sectionTop - headerHeight,
+        behavior: 'instant'
+      });
+    }
+    
+    // Set up scroll observer after scrolling back
+    setTimeout(() => {
+      setupScroll();
+      state.isFiltering = false; // Clear flag after setup
+    }, 100);
+  });
 }
 
 /**
  * Update all heading sections
+ * @param {Array} data - Theme data to display, or null to recalculate from current decade
+ * @param {boolean} shouldUpdateFeatured - Whether to update featured image
  */
-const updateHeading = (data, shouldUpdateFeatured = true) => {
+const updateHeading = (data = null, shouldUpdateFeatured = true) => {
+  // If no data provided, recalculate for current decade
+  if (!data) {
+    const filteredStamps = state.stamps;
+    const grouped = groupByDecadeAndTheme(filteredStamps);
+    const flattened = flattenGroupedData(grouped);
+    
+    data = flattened
+      .filter(group => group.decade === state.selectedDecade)
+      .sort((a, b) => b.count - a.count);
+    
+    if (data.length === 0) return;
+    
+    // Determine featured stamp for this decade
+    state.featuredStamp = getFeaturedStampComponent(
+      data,
+      state.featuredStamp,
+      filteredStamps,
+      state.selectedDecade
+    );
+  }
+
   updateColors(data, state, groupAndDisplayData);
   updateThemes(data);
   updateHistory(state, groupAndDisplayData);
@@ -248,6 +339,39 @@ const enterHomepage = () => {
   dataSection.style.display = "none";
 }
 
+const setupScroll = () => {
+  // Destroy existing scroller if it exists
+  if (scroller) {
+    scroller.destroy();
+  }
+
+  // instantiate the scrollama
+  scroller = scrollama();
+
+  // setup the instance, pass callback functions
+  scroller
+    .setup({
+      step: ".decade-section",
+      offset: 0.75
+    })
+    .onStepEnter((response) => {
+      // Ignore scroll events during filtering
+      if (state.isFiltering) return;
+      
+      const newDecade = Number(response.element.id.replace("decade-", ""));
+
+      // Only update if decade has changed
+      if (newDecade !== state.selectedDecade) {
+        // Update the circle position on the slider
+        redrawCurrentDecadeIndicator(state, newDecade);
+        
+        // Update selected decade and heading (will recalculate from state.stamps)
+        state.selectedDecade = newDecade;
+        updateHeading(null, true);
+      }
+    })
+}
+
 // start point
 const initializeApp = (stampData, decades) => {
   allStamps = stampData;
@@ -264,6 +388,19 @@ const initializeApp = (stampData, decades) => {
   titleText.onclick = () => {
     enterHomepage();
   };
+
+  // Add window resize listener to update decade section heights
+  // let resizeTimeout;
+  // window.addEventListener('resize', () => {
+  //   clearTimeout(resizeTimeout);
+  //   resizeTimeout = setTimeout(() => {
+  //     setDecadeSectionHeights();
+  //     // Optionally resize scrollama after height changes
+  //     if (scroller) {
+  //       scroller.resize();
+  //     }
+  //   }, 250); // Debounce resize events
+  // });
 }
 
 // load data and initialize application
