@@ -246,7 +246,6 @@ p a:hover {
 }
 
 .data-content-wrapper {
-  margin-top: 2em;
   position: relative;
 }
 
@@ -525,4 +524,9 @@ p a:hover {
   margin-top: 1em;
   display: none;
   cursor: pointer;
+}
+
+.decade-section {
+  border-bottom: 1px solid var(--color-middle);
+  padding: 2em 0 5em 0;
 }

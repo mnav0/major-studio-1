@@ -1,6 +1,8 @@
 import * as d3 from "d3";
 import { colors } from "../constants/colors.js";
 
+let y, timeline, lineIndicator, circleIndicator;
+
 /**
  * Draw the vertical time slider
  * @param {Array} decades - Array of all decades to show on slider
@@ -23,11 +25,11 @@ export const drawTimeSlider = (decades, state, onDecadeChange) => {
     .style("display", "block");
 
   // Create vertical scale
-  const y = d3.scaleLinear()
+  y = d3.scaleLinear()
     .domain([d3.min(decades), d3.max(decades)])
     .range([margin.top, height - margin.bottom]);
 
-  const timeline = svg.append("g")
+  timeline = svg.append("g")
     .attr("class", "timeline")
     .attr("transform", `translate(${margin.left},0)`);
 
@@ -68,7 +70,7 @@ export const drawTimeSlider = (decades, state, onDecadeChange) => {
     .text(d => d === state.selectedDecade ? d : '');
 
   // Add line for current position indicator
-  const lineIndicator = timeline.append("line")
+  lineIndicator = timeline.append("line")
     .attr("class", "indicator-line")
     .attr("x1", 0)
     .attr("x2", 35)
@@ -78,7 +80,7 @@ export const drawTimeSlider = (decades, state, onDecadeChange) => {
     .attr("stroke-width", 1);
 
   // Add circle for current position indicator
-  const circleIndicator = timeline.append("circle")
+  circleIndicator = timeline.append("circle")
     .attr("class", "position-indicator")
     .attr("cx", 0)
     .attr("cy", y(state.selectedDecade))
@@ -99,18 +101,24 @@ export const drawTimeSlider = (decades, state, onDecadeChange) => {
     .attr("fill", "transparent")
     .style("cursor", "pointer")
     .on("click", function(event, d) {
-      state.selectedDecade = d;
-      lineIndicator.transition()
-        .duration(150)
-        .attr("y1", y(state.selectedDecade))
-        .attr("y2", y(state.selectedDecade));
-      circleIndicator.transition()
-        .duration(150)
-        .attr("cy", y(state.selectedDecade));
-
-      timeline.selectAll("text.decade-label").text(dd => dd === state.selectedDecade ? dd : '');
+      window.scrollTo({ top: document.getElementById(`decade-${d}`).offsetTop + 120, behavior: 'smooth' });
+      redrawCurrentDecadeIndicator(state, d);
       onDecadeChange();
     });
+}
+
+export const redrawCurrentDecadeIndicator = (state, d) => {
+  state.selectedDecade = d;
+
+  lineIndicator.transition()
+    .duration(150)
+    .attr("y1", y(state.selectedDecade))
+    .attr("y2", y(state.selectedDecade));
+  circleIndicator.transition()
+    .duration(150)
+    .attr("cy", y(state.selectedDecade));
+
+  timeline.selectAll("text.decade-label").text(dd => dd === state.selectedDecade ? dd : '');
 }
 
 /**
