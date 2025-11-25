@@ -15,6 +15,7 @@ export const toggleStampModal = (stamp, onClose) => {
     loadingDiv.style.opacity = "1";
 
     modal.style.display = "block";
+    document.body.classList.add("modal-open");
 
     const imgSizeParam = "max";
     const imgSizeValue = 1500;
@@ -28,21 +29,49 @@ export const toggleStampModal = (stamp, onClose) => {
     img.src = imageUrl;
     img.alt = stamp.title;
 
-    const textContainer = modal.querySelector("#modal-text").querySelector('.text');
-    const titleElem = document.createElement("h2");
+    const titleElem = modal.querySelector("h2");
     titleElem.textContent = stamp.title;
-    const descElem = document.createElement("p");
+
+    const themeElem = modal.querySelector("#modal-theme")
+    themeElem.textContent = stamp.theme;
+
+    const descElem = modal.querySelector("#modal-description");
     descElem.textContent = stamp.description;
-    textContainer.appendChild(titleElem);
-    textContainer.appendChild(descElem);
+    
+    const materialsElem = modal.querySelector("#modal-materials");
+    stamp.materials.forEach((material) => {
+      const materialDiv = document.createElement("div");
+      const materialText = document.createElement("p");
+      materialDiv.className = "material-item-sm";
+      materialText.innerHTML = material;
+      materialDiv.appendChild(materialText);
+      materialsElem.appendChild(materialDiv);
+    });
+
+    const colorsElem = modal.querySelector("#modal-colors");
+    stamp.colors.colorData.forEach(color => {
+      const colorSwatch = document.createElement("div");
+      colorSwatch.className = "color-swatch-sm";
+      colorSwatch.style.backgroundColor = color.hex;
+      colorsElem.appendChild(colorSwatch);
+    }); 
+
 
     const closeButton = document.querySelector("#close-modal-button");
     closeButton.onclick = () => {
       modal.style.display = "none";
+      document.body.classList.remove("modal-open");
       img.src = "";
       img.alt = "";
-      textContainer.innerHTML = "";
-      imageContainer.classList.remove("tall-modal-image");
+      
+      imageContainer.classList.remove("tall-modal-image")
+
+      // clear all text content
+      titleElem.textContent = "";
+      themeElem.textContent = "";
+      descElem.textContent = "";
+      materialsElem.innerHTML = "";
+      colorsElem.innerHTML = "";
       onClose();
     };
   }
