@@ -35,8 +35,15 @@ export const toggleStampModal = (stamp, onClose) => {
     const themeElem = modal.querySelector("#modal-theme")
     themeElem.textContent = stamp.theme;
 
-    const descElem = modal.querySelector("#modal-description");
-    descElem.textContent = stamp.description;
+    let descHeading;
+    let descElem;
+    if (stamp.description) {
+      descElem = modal.querySelector("#modal-description");
+      descElem.textContent = stamp.description;
+    } else {
+      descHeading = modal.querySelector("#modal-description-heading");
+      descHeading.style.display = "none";
+    }
     
     const materialsElem = modal.querySelector("#modal-materials");
     stamp.materials.forEach((material) => {
@@ -69,7 +76,11 @@ export const toggleStampModal = (stamp, onClose) => {
       // clear all text content
       titleElem.textContent = "";
       themeElem.textContent = "";
-      descElem.textContent = "";
+      if (descHeading) {
+        descHeading.style.display = "block";
+      } else if (descElem) {
+        descElem.textContent = "";
+      }
       materialsElem.innerHTML = "";
       colorsElem.innerHTML = "";
       onClose();
