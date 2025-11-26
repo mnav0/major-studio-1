@@ -26,6 +26,11 @@ export const toggleStampModal = (stamp, onClose) => {
     }
 
     const img = imageContainer.querySelector("img");
+    if (stamp.aspectRatio === "horizontal" || 
+        stamp.aspectRatio === "wide" || 
+        stamp.aspectRatio === "widest") {
+      img.classList.add("fill-modal-height");
+    }
     img.src = imageUrl;
     img.alt = stamp.title;
 
@@ -68,6 +73,7 @@ export const toggleStampModal = (stamp, onClose) => {
     closeButton.onclick = () => {
       modal.style.display = "none";
       document.body.classList.remove("modal-open");
+      img.classList.remove("fill-modal-height");
       img.src = "";
       img.alt = "";
       

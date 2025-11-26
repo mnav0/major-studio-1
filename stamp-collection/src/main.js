@@ -388,19 +388,6 @@ const initializeApp = (stampData, decades) => {
   titleText.onclick = () => {
     enterHomepage();
   };
-
-  // Add window resize listener to update decade section heights
-  // let resizeTimeout;
-  // window.addEventListener('resize', () => {
-  //   clearTimeout(resizeTimeout);
-  //   resizeTimeout = setTimeout(() => {
-  //     setDecadeSectionHeights();
-  //     // Optionally resize scrollama after height changes
-  //     if (scroller) {
-  //       scroller.resize();
-  //     }
-  //   }, 250); // Debounce resize events
-  // });
 }
 
 // load data and initialize application
