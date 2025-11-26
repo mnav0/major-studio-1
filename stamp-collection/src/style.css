@@ -302,7 +302,7 @@ p a:hover {
 }
 
 .stamp-image-container {
-  height: 13em;
+  height: 14.25em;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -325,7 +325,7 @@ p a:hover {
 
 .stamp-highlight-thumbnail {
   max-width: 100%;
-  max-height: 13em;
+  max-height: 14.25em;
   height: auto !important;
   width: auto !important;
   object-fit: contain;
@@ -354,8 +354,7 @@ p a:hover {
 }
 
 .horizontal-stamp-thumbnail,
-.wide-stamp-thumbnail,
-.widest-stamp-thumbnail {
+.wide-stamp-thumbnail {
   margin-top: 2em;
 }
 

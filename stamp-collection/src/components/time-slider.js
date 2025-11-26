@@ -16,7 +16,7 @@ export const drawTimeSlider = (decades, state, onDecadeChange) => {
   // Create vertical timeline structure
   const margin = { top: 10, right: 0, bottom: 10, left: 10 };
   const width = 110;
-  const height = 230;
+  const height = 250;
 
   const svg = d3.select("#slider-container")
     .append("svg")

@@ -4,6 +4,15 @@ import contextRegex from "../constants/text.js";
 import { getColorsForDecadeAndTheme } from "../utils/color-analyzer.js";
 
 /**
+ * Helper function to toggle selection state for any filter item
+ */
+const toggleSelection = (item, element, className, callback) => {
+  item.selected = !item.selected;
+  element.classList.toggle(className);
+  callback();
+};
+
+/**
  * Update main themes display
  */
 export const updateThemes = (data) => {
@@ -65,18 +74,43 @@ export const updateHistory = (state, onWordClick) => {
 
   histContext.innerHTML = parsedContent;
 
+  // Check for previously selected words that are NOT in the current context
+  const wordsInContext = state.words.map(w => w.text);
+  const missingSelected = previouslySelected.filter(word => 
+    !wordsInContext.includes(word)
+  );
+
+  // Append missing selected words at the end
+  if (missingSelected.length > 0) {
+    const appendDiv = document.createElement("div");
+    appendDiv.style.marginTop = "0.5em";
+    
+    missingSelected.forEach(word => {
+      const wordSpan = document.createElement("span");
+      wordSpan.className = "filter-word selected-word";
+      wordSpan.textContent = word;
+      wordSpan.style.marginRight = "0.15em";
+      
+      const wordObj = { text: word, selected: true };
+      state.words.push(wordObj);
+      appendDiv.appendChild(wordSpan);
+      
+      wordSpan.addEventListener("click", () => {
+        toggleSelection(wordObj, wordSpan, "selected-word", onWordClick);
+      });
+    });
+    
+    histContext.appendChild(appendDiv);
+  }
+
+  // Add click handlers to all filter words
   const filterWords = document.querySelectorAll(".filter-word");
   filterWords.forEach((wordSpan) => {
     wordSpan.addEventListener("click", () => {
       const wordObj = state.words.find(w => w.text === wordSpan.textContent);
-      if (!wordObj?.selected) {
-        wordObj.selected = true;
-        wordSpan.classList.add("selected-word");
-      } else {
-        wordObj.selected = false;
-        wordSpan.classList.remove("selected-word");
+      if (wordObj) {
+        toggleSelection(wordObj, wordSpan, "selected-word", onWordClick);
       }
-      onWordClick();
     });
   });
 }
@@ -93,7 +127,6 @@ export const updateMaterials = (data, state, onMaterialClick) => {
     .map(m => m.name);
   
   featuredMaterialsContainer.innerHTML = "";
-  state.materials = [];
 
   // Get top materials from the top theme
   const topThemeStamps = data[0]?.stamps || [];
@@ -109,31 +142,32 @@ export const updateMaterials = (data, state, onMaterialClick) => {
   const sortedMaterials = Object.entries(materialCounts).sort((a, b) => b[1] - a[1]);
   const topMaterials = sortedMaterials.slice(0, 5).map(entry => entry[0]);
 
-  topMaterials.forEach((material) => {
+  // Build materials array: selected materials first, then fill with top materials
+  const materialsToDisplay = [...topMaterials];
+  const missingSelected = previouslySelected.filter(s => !topMaterials.includes(s));
+  
+  if (missingSelected.length > 0) {
+    materialsToDisplay.push(...missingSelected);
+    materialsToDisplay.splice(5); // Keep only first 5
+  }
+
+  state.materials = [];
+
+  materialsToDisplay.forEach((material) => {
+    const wasSelected = previouslySelected.includes(material);
+    const materialObj = { name: material, selected: wasSelected };
+    state.materials.push(materialObj);
+    
     const materialDiv = document.createElement("div");
     const materialText = document.createElement("p");
     materialDiv.className = "material-item";
     materialText.innerHTML = material;
+    if (wasSelected) materialText.classList.add("selected-word");
     materialDiv.appendChild(materialText);
 
     materialDiv.onclick = () => {
-      const materialObj = state.materials.find(mat => mat.name === materialText.textContent.toLowerCase());
-      if (!materialObj?.selected) {
-        materialObj.selected = true;
-        materialText.classList.add("selected-word");
-      } else {
-        materialObj.selected = false;
-        materialText.classList.remove("selected-word");
-      }
-      onMaterialClick();
+      toggleSelection(materialObj, materialText, "selected-word", onMaterialClick);
     };
-
-    const wasSelected = previouslySelected.includes(material);
-    state.materials.push({ name: material, selected: wasSelected });
-    
-    if (wasSelected) {
-      materialText.classList.add("selected-word");
-    }
     
     featuredMaterialsContainer.appendChild(materialDiv);
   });
@@ -144,8 +178,6 @@ export const updateMaterials = (data, state, onMaterialClick) => {
  */
 export const updateColors = (data, state, onColorClick) => {
   const swatches = document.querySelectorAll(".color-swatch");
-  
-  // Clear swatches visual state
   swatches.forEach(s => {
     s.style.backgroundColor = "transparent";
     s.classList.remove("selected");
@@ -154,42 +186,39 @@ export const updateColors = (data, state, onColorClick) => {
   const topThemeGroup = data[0];
   if (!topThemeGroup?.stamps) return;
 
-  const topColors = getColorsForDecadeAndTheme(
-    data, 
-    state.selectedDecade, 
-    topThemeGroup.theme, 
-    5
-  );
+  const previouslySelected = state.colors.filter(c => c.selected);
+  const topColors = getColorsForDecadeAndTheme(data, state.selectedDecade, topThemeGroup.theme, 5);
   
-  // Build new color array, preserving positions of selected colors
-  const colorsToDisplay = new Array(5).fill(null);
+  // Build color array: selected colors first, then fill with top colors
+  const colorsToDisplay = [];
+  const usedHexes = new Set();
   
-  // Keep selected colors in their original positions
-  state.colors.forEach((color, idx) => {
-    if (color.selected && idx < 5) {
-      colorsToDisplay[idx] = { ...color };
+  // Add selected colors that exist in topColors
+  topColors.forEach(topColor => {
+    const selectedMatch = previouslySelected.find(ps => ps.hex === topColor.hex);
+    if (selectedMatch) {
+      colorsToDisplay.push(selectedMatch);
+      usedHexes.add(topColor.hex);
     }
   });
   
-  // Fill empty slots with new top colors (skip colors already selected)
-  let newColorIndex = 0;
-  for (let i = 0; i < 5; i++) {
-    if (colorsToDisplay[i] === null && newColorIndex < topColors.length) {
-      // Find next unused color
-      while (newColorIndex < topColors.length) {
-        const newColor = topColors[newColorIndex++];
-        const alreadyUsed = colorsToDisplay.some(c => c?.hex === newColor.hex);
-        
-        if (!alreadyUsed) {
-          colorsToDisplay[i] = { ...newColor, selected: false };
-          break;
-        }
-      }
+  // Add missing selected colors (not in topColors)
+  previouslySelected.forEach(selectedColor => {
+    if (!usedHexes.has(selectedColor.hex)) {
+      colorsToDisplay.push(selectedColor);
+      usedHexes.add(selectedColor.hex);
     }
-  }
+  });
   
-  // Update state with non-null colors
-  state.colors = colorsToDisplay.filter(c => c !== null);
+  // Fill remaining slots with non-selected top colors
+  topColors.forEach(topColor => {
+    if (!usedHexes.has(topColor.hex) && colorsToDisplay.length < 5) {
+      colorsToDisplay.push({ ...topColor, selected: false });
+      usedHexes.add(topColor.hex);
+    }
+  });
+  
+  state.colors = colorsToDisplay;
   
   // Render swatches
   swatches.forEach((swatch, idx) => {
@@ -201,15 +230,9 @@ export const updateColors = (data, state, onColorClick) => {
       swatch.style.cursor = "pointer";
       
       swatch.onclick = () => {
-        const stateColor = state.colors.find(c => c.hex === color.hex);
-        if (stateColor) {
-          stateColor.selected = !stateColor.selected;
-          swatch.classList.toggle("selected");
-          onColorClick();
-        }
+        toggleSelection(color, swatch, "selected", onColorClick);
       };
     } else {
-      // No color - make non-interactive
       swatch.style.cursor = "default";
       swatch.onclick = null;
     }
