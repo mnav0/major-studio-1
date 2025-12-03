@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { githubPagesURL } from "../constants/image-url-base";
 
 /**
  * Draw stamp bars grouped by theme and split by decade
@@ -39,9 +40,7 @@ export const drawBars = (data, decades, onStampClick) => {
       
       // Display stamp thumbnails
       themeData.stamps.forEach(stamp => {
-        const imgSizeParam = "max";
-        const imgSizeValue = 200;
-        const imageUrl = stamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+        const imageUrl = githubPagesURL + stamp.id + ".jpg";
         
         stampsContainer.append("div")
           .attr("class", () => {

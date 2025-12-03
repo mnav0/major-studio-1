@@ -1,0 +1,1 @@
+export const githubPagesURL = "https://mnav0.github.io/si-stamp-images/images/";

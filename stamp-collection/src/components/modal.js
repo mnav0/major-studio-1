@@ -1,4 +1,5 @@
 import { colors } from "../constants/colors.js";
+import { githubPagesURL } from "../constants/image-url-base.js";
 
 /**
  * Toggle stamp modal visibility and populate with stamp data
@@ -17,10 +18,6 @@ export const toggleStampModal = (stamp, onClose) => {
     modal.style.display = "block";
     document.body.classList.add("modal-open");
 
-    const imgSizeParam = "max";
-    const imgSizeValue = 1500;
-    const imageUrl = stamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
-
     if (stamp.aspectRatio === "tall") {
       imageContainer.classList.add("tall-modal-image");
     }
@@ -28,10 +25,11 @@ export const toggleStampModal = (stamp, onClose) => {
     const img = imageContainer.querySelector("img");
     if (stamp.aspectRatio === "horizontal" || 
         stamp.aspectRatio === "wide" || 
-        stamp.aspectRatio === "widest") {
+        stamp.aspectRatio === "widest" || 
+        stamp.aspectRatio === "extra-wide") {
       img.classList.add("fill-modal-height");
     }
-    img.src = imageUrl;
+    img.src = githubPagesURL + stamp.id + ".jpg";
     img.alt = stamp.title;
 
     const titleElem = modal.querySelector("h2");
