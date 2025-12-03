@@ -47,6 +47,14 @@ export const updateHistory = (state, onWordClick) => {
   const histContext = document.querySelector("#historical-context");
   const content = historicalContext[state.selectedDecade];
   
+  // Helper function to normalize words (remove common plural/singular differences)
+  const normalizeWord = (word) => {
+    return word.toLowerCase()
+      .replace(/ies$/, 'y')        // colonies -> colony
+      .replace(/es$/, '')          // taxes -> tax, forces -> force
+      .replace(/s$/, '');          // stamps -> stamp, wars -> war
+  };
+  
   // Helper function to check if a word appears in the filtered stamps
   const wordExistsInStamps = (word) => {
     const wordLower = word.toLowerCase();
@@ -62,7 +70,10 @@ export const updateHistory = (state, onWordClick) => {
   // Parse content to match all context words and wrap in spans
   const parsedContent = content.replace(contextRegex, (match) => {
     if (wordExistsInStamps(match)) {
-      const wasSelected = previouslySelected.includes(match);
+      // Check if previously selected (normalized comparison for plurals)
+      const wasSelected = previouslySelected.some(word => 
+        normalizeWord(word) === normalizeWord(match)
+      );
       state.words.push({ text: match, selected: wasSelected });
       
       const selectedClass = wasSelected ? ' selected-word' : '';
@@ -74,10 +85,10 @@ export const updateHistory = (state, onWordClick) => {
 
   histContext.innerHTML = parsedContent;
 
-  // Check for previously selected words that are NOT in the current context
-  const wordsInContext = state.words.map(w => w.text);
+  // Check for previously selected words that are NOT in the current context (normalized comparison)
+  const wordsInContextNormalized = state.words.map(w => normalizeWord(w.text));
   const missingSelected = previouslySelected.filter(word => 
-    !wordsInContext.includes(word)
+    !wordsInContextNormalized.includes(normalizeWord(word))
   );
 
   // Append missing selected words at the end

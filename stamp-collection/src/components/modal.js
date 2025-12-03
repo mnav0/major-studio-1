@@ -1,5 +1,4 @@
 import { colors } from "../constants/colors.js";
-import { githubPagesURL } from "../constants/image-url-base.js";
 
 /**
  * Toggle stamp modal visibility and populate with stamp data
@@ -29,7 +28,12 @@ export const toggleStampModal = (stamp, onClose) => {
         stamp.aspectRatio === "extra-wide") {
       img.classList.add("fill-modal-height");
     }
-    img.src = githubPagesURL + stamp.id + ".jpg";
+
+    const imgSizeParam = "max";
+    const imgSizeValue = 1500;
+    const imageUrl = stamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
+
+    img.src = imageUrl;
     img.alt = stamp.title;
 
     const titleElem = modal.querySelector("h2");

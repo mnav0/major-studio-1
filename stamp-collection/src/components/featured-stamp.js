@@ -1,6 +1,5 @@
 import { colors } from "../constants/colors.js";
 import { images, titles, ids } from "../constants/images.js";
-import { githubPagesURL } from "../constants/image-url-base";
 
 /**
  * Update the featured stamp display
@@ -67,7 +66,9 @@ export const updateFeaturedImg = (featuredStamp, state) => {
   const tempImg = new Image();
   tempImg.crossOrigin = "Anonymous";
 
-  tempImg.src = githubPagesURL + featuredStamp.id + ".jpg";
+  const imgSizeParam = "max";
+  const imgSizeValue = 1500;
+  tempImg.src = featuredStamp.thumbnail + `&${imgSizeParam}=${imgSizeValue}`;
 
   tempImg.onload = function() {
     let detectedData = featuredStamp.detected || [];
