@@ -9,7 +9,6 @@ export function findBucketForTheme(theme) {
       return bucketName;
     }
   }
-  return "Other";
 }
 
 /**
