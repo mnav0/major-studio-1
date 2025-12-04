@@ -387,6 +387,9 @@ const initializeApp = (stampData, decades) => {
   titleText.innerHTML = `<strong>America's Stamp Collection / 1765-1894</strong> (${stampData.length} stamps)`;
   titleText.onclick = () => {
     enterHomepage();
+    resetFilters();
+    state.selectedDecade = allDecades[0];
+    redrawCurrentDecadeIndicator(state, state.selectedDecade);
   };
 }
 
